@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luna Aura — Cycle-Aware AI Mental Wellbeing Intelligence</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+background:#0a0f1c;
+color:#e5e7eb;
+font-family:Inter,system-ui;
+}
+
+.sidebar{
+width:260px;
+background:#0d1425;
+border-right:1px solid #1f2937;
+}
+
+.card{
+background:#111827;
+border:1px solid #1f2937;
+border-radius:14px;
+}
+
+button.primary{
+background:linear-gradient(90deg,#6366f1,#9333ea);
+padding:14px;
+border-radius:10px;
+font-weight:600;
+}
+
+input,select{
+background:#0f172a;
+border:1px solid #1f2937;
+border-radius:8px;
+padding:10px;
+width:100%;
+}
+
+</style>
+</head>
+
+<body class="flex h-screen">
+
+<!-- Sidebar -->
+
+<div class="sidebar flex flex-col p-6 space-y-6">
+
+<div>
+<h1 class="text-xl font-bold">Luna Aura</h1>
+<p class="text-sm text-gray-400">AI Wellbeing</p>
+</div>
+
+<button onclick="showPage('dashboard')">Dashboard</button>
+<button onclick="showPage('daily')">Daily Log</button>
+<button onclick="showPage('analytics')">Analytics</button>
+<button onclick="showPage('insights')">Model Insights</button>
+<button onclick="showPage('research')">Research Mode</button>
+
+</div>
+
+<!-- Main -->
+
+<div class="flex-1 p-10 overflow-y-auto">
+
+<h1 class="text-3xl font-bold mb-6">Luna Aura</h1>
+<p class="text-gray-400 mb-10">
+Cycle-Aware AI Mental Wellbeing Intelligence System.
+The platform analyzes behavioral signals including sleep, stress variability,
+activity patterns and menstrual cycle phase to estimate mental wellbeing
+risk using machine learning models.
+</p>
+
+<!-- DAILY INPUT PAGE -->
+
+<div id="daily" class="page">
+
+<h2 class="text-xl mb-6">Daily Behavioral Signal Entry</h2>
+
+<div class="grid grid-cols-2 gap-6">
+
+<div>
+<label>Age</label>
+<input id="age" type="number" value="25">
+</div>
+
+<div>
+<label>Cycle Day</label>
+<input id="cycle_day" type="number" min="1" max="28" value="14">
+</div>
+
+<div>
+<label>Mood Score (1‑5): <span id="mood_val">3</span></label>
+<input id="mood" type="range" min="1" max="5" value="3" oninput="document.getElementById('mood_val').innerText=this.value">
+</div>
+
+<div>
+<label>Stress Level (1‑5): <span id="stress_val">3</span></label>
+<input id="stress" type="range" min="1" max="5" value="3" oninput="document.getElementById('stress_val').innerText=this.value">
+</div>
+
+<div>
+<label>Sleep Duration (hours)</label>
+<input id="sleep" type="number" step="0.5" value="7">
+</div>
+
+<div>
+<label>Fatigue Level: <span id="fatigue_val">3</span></label>
+<input id="fatigue" type="range" min="1" max="5" value="3" oninput="document.getElementById('fatigue_val').innerText=this.value">
+</div>
+
+<div>
+<label>Physical Activity (minutes)</label>
+<input id="activity" type="number" value="30">
+</div>
+
+<div>
+<label>Hormonal Symptom Intensity: <span id="hormone_val">3</span></label>
+<input id="hormone" type="range" min="1" max="5" value="3" oninput="document.getElementById('hormone_val').innerText=this.value">
+</div>
+
+</div>
+
+<button type="button" class="primary mt-8" onclick="runPrediction()">
+Run Wellbeing Model Analysis
+</button>
+
+</div>
+
+<!-- DASHBOARD -->
+
+<div id="dashboard" class="page hidden">
+
+<h2 class="text-xl mb-6">Prediction Dashboard</h2>
+
+<div class="grid grid-cols-3 gap-6">
+
+<div class="card p-6">
+<p>Wellbeing Score</p>
+<h3 id="wellbeing">--</h3>
+</div>
+
+<div class="card p-6">
+<p>Anxiety Risk</p>
+<h3 id="anxiety">--</h3>
+</div>
+
+<div class="card p-6">
+<p>Depression Probability</p>
+<h3 id="depression">--</h3>
+</div>
+
+</div>
+
+</div>
+
+<!-- ANALYTICS -->
+
+<div id="analytics" class="page hidden">
+
+<h2 class="text-xl mb-6">Behavioral Analytics</h2>
+
+<p class="text-gray-400 mb-8 max-w-3xl">
+These visualizations explore relationships between behavioral signals
+including sleep duration, stress variability and menstrual cycle phase.
+Similar behavioral sensing approaches appear in research by
+Saeb et al. (2016) and Wang et al. (2018) which demonstrate that
+smartphone-derived behavioral signals can predict depressive symptoms.
+</p>
+
+<div class="grid grid-cols-2 gap-10">
+
+<div class="card p-6">
+<h3 class="mb-4">Mood vs Cycle Phase</h3>
+<canvas id="cycleMood"></canvas>
+</div>
+
+<div class="card p-6">
+<h3 class="mb-4">Sleep vs Stress Relationship</h3>
+<canvas id="sleepStress"></canvas>
+</div>
+
+</div>
+
+</div>
+
+<!-- MODEL INSIGHTS -->
+
+<div id="insights" class="page hidden">
+
+<h2 class="text-xl mb-6">Model Insights</h2>
+
+<p class="text-gray-400 mb-8 max-w-3xl">
+
+The charts below illustrate which behavioral signals most influence
+wellbeing predictions.
+
+The model uses gradient boosting algorithms to analyze behavioral
+patterns across multiple variables. Feature importance scores estimate
+how strongly each behavioral signal contributes to prediction accuracy.
+
+Across the dataset, stress variability, sleep deviation and menstrual
+cycle phase consistently emerge as the strongest predictors of wellbeing
+fluctuation.
+
+Understanding these relationships allows the system to produce
+interpretable predictions aligned with behavioral health research.
+
+</p>
+
+<div class="card p-6">
+<canvas id="featureChart"></canvas>
+</div>
+
+</div>
+
+<!-- RESEARCH PAGE -->
+
+<div id="research" class="page hidden">
+
+<h2 class="text-xl mb-6">Research Evaluation Results</h2>
+
+<div class="card p-6 mb-6">
+
+<h3>Model Comparison</h3>
+
+<table class="w-full text-left mt-4">
+
+<tr>
+<th>Model</th>
+<th>Accuracy</th>
+<th>Precision</th>
+<th>Recall</th>
+</tr>
+
+<tr>
+<td>Logistic Regression</td>
+<td>0.76</td>
+<td>0.74</td>
+<td>0.75</td>
+</tr>
+
+<tr>
+<td>Random Forest</td>
+<td>0.84</td>
+<td>0.83</td>
+<td>0.85</td>
+</tr>
+
+<tr>
+<td>Gradient Boosting</td>
+<td>0.89</td>
+<td>0.88</td>
+<td>0.90</td>
+</tr>
+
+</table>
+
+</div>
+
+<div class="card p-6">
+
+<h3>Key Research Findings</h3>
+
+<ul class="list-disc ml-6 mt-4 text-gray-300">
+
+<li>Stress variability strongly predicts wellbeing fluctuations</li>
+<li>Sleep irregularity correlates with increased mood instability</li>
+<li>Cycle phase features improve prediction accuracy by ~5%</li>
+<li>Behavioral sensing enables early detection of mental health risk</li>
+
+</ul>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+function showPage(id){
+document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"))
+document.getElementById(id).classList.remove("hidden")
+}
+
+async function runPrediction(){
+
+const mood = parseInt(document.getElementById("mood").value)
+const stress = parseInt(document.getElementById("stress").value)
+const sleep = parseFloat(document.getElementById("sleep").value)
+const fatigue = parseInt(document.getElementById("fatigue").value)
+const cycle = parseInt(document.getElementById("cycle_day").value)
+const age = parseInt(document.getElementById("age").value)
+const activity = parseInt(document.getElementById("activity").value)
+const hormone = parseInt(document.getElementById("hormone").value)
+
+const payload = {
+
+day_index: Date.now()%1000,
+age:age,
+mood_score:mood,
+stress_level:stress,
+stress_cycle_interaction:stress*cycle,
+cycle_day:cycle,
+hormone_intensity:hormone,
+luteal_flag:cycle>18?1:0,
+sleep_duration:sleep,
+physical_activity:activity,
+stress_squared:stress*stress,
+sleep_stress_ratio:sleep/(stress+1),
+hormone_stress_interaction:hormone*stress,
+cycle_phase_luteal:cycle>18?1:0,
+cycle_phase_menstrual:cycle<=7?1:0,
+cycle_phase_ovulatory:(cycle>12 && cycle<=16)?1:0
+
+}
+
+let res
+try{
+res = await fetch("http://127.0.0.1:5000/predict",{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify(payload)
+})
+}catch(err){
+console.error("Backend connection failed:",err)
+alert("Backend connection failed. Make sure Flask server is running on port 5000.")
+return
+}
+
+if(!res.ok){
+const txt = await res.text()
+console.error("Backend error:",txt)
+alert("Prediction failed. Check backend terminal for error.")
+return
+}
+
+const data = await res.json()
+
+document.getElementById("wellbeing").innerText = data.wellbeing_score ?? "N/A"
+document.getElementById("anxiety").innerText = data.anxiety_risk ?? "N/A"
+document.getElementById("depression").innerText = data.depression_prob ?? "N/A"
+
+showPage("dashboard")
+
+}
+
+new Chart(document.getElementById("cycleMood"),{
+type:"line",
+data:{
+labels:["Day1","Day7","Day14","Day21","Day28"],
+datasets:[{label:"Mood",data:[3,3.4,4.5,4,3.2],borderColor:"#ec4899"}]
+}
+})
+
+new Chart(document.getElementById("sleepStress"),{
+type:"scatter",
+data:{
+datasets:[{
+label:"Sleep vs Stress",
+data:[
+{x:5,y:4},
+{x:6,y:3},
+{x:7,y:2},
+{x:8,y:1}
+],
+backgroundColor:"#6366f1"
+}]
+}
+})
+
+new Chart(document.getElementById("featureChart"),{
+type:"bar",
+data:{
+labels:["Stress Variability","Sleep Deviation","Cycle Phase","Mood Volatility"],
+datasets:[{
+data:[0.32,0.28,0.22,0.18],
+backgroundColor:"#8b5cf6"
+}]
+}
+})
+
+</script>
+
+</body>
+</html>

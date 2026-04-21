@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Luna Aura - Cycle-aware behavioral analytics platform for mental wellbeing research">
+    <meta name="theme-color" content="#030712">
+    <title>Luna Aura | Distributional Analytics</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: #030712;
+            color: #f3f4f6;
+        }
+
+        /* Glassmorphism Components */
+        .glass-card {
+            background: rgba(31, 41, 55, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            border-color: #9333ea;
+            box-shadow: 0 10px 40px rgba(147, 51, 234, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* Core Inputs */
+        input[type="number"] {
+            background-color: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(75, 85, 99, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #9333ea;
+            box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.2);
+        }
+
+        /* Custom Range Slider */
+        input[type="range"] {
+            accent-color: #9333ea;
+        }
+
+        /* Aesthetics */
+        .gradient-text {
+            background: linear-gradient(90deg, #c084fc, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(209, 213, 219, 0.3);
+            border-top-color: #9333ea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Interactive Results Logic */
+        #results-container {
+            opacity: 0.4;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        #results-container.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Severity Bands */
+        .severity-Minimal { color: #10b981; } /* Emerald */
+        .severity-Mild { color: #10b981; }
+        .severity-Moderate { color: #f59e0b; } /* Amber */
+        .severity-Moderately { color: #ef4444; } /* Red */
+        .severity-Severe { color: #b91c1c; } /* Dark Red */
+
+        /* Canvas Wrapper */
+        .canvas-wrapper {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        /* Responsive Layout Overrides */
+        @media (max-width: 768px) {
+            #app-container { flex-direction: column; }
+            aside { width: 100% !important; border-right: none; border-bottom: 1px solid #1f2937; }
+            .content-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar Layout -->
+    <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col z-20">
+        <div class="p-6 border-b border-gray-800 flex items-center gap-4">
+            <div class="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center text-xl shadow-lg shadow-purple-900/50">
+                🌙
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-white">Luna Aura</h1>
+                <p class="text-xs text-purple-400 font-medium tracking-wide uppercase">Research Platform</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 p-4 space-y-2">
+            <button class="w-full flex items-center gap-3 text-left px-4 py-3 rounded-lg text-white bg-gray-800 border border-gray-700 shadow-sm shadow-purple-900/20">
+                <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                Inference Engine
+            </button>
+            <button class="w-full flex items-center gap-3 text-left px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800/50 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                Model Metrics
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-gray-800">
+            <div class="text-xs text-gray-500 text-center">System v2.0 - Non-Parametric</div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col overflow-y-auto bg-gray-950 relative" id="app-container">
+        
+        <!-- Ambient Background Glow -->
+        <div class="absolute top-0 right-0 w-96 h-96 bg-purple-900/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <header class="px-8 py-8 flex-shrink-0 z-10">
+            <h2 class="text-3xl font-bold mb-2">Behavioral <span class="gradient-text">Distribution Dashboard</span></h2>
+            <p class="text-gray-400 max-w-3xl leading-relaxed">
+                Run cross-sectional patient analytics. The engine resolves real-time LightGBM non-parametric boundaries to calculate exact behavioral confidence envelopes mapping sleep and phase constraints to PHQ distributions.
+            </p>
+        </header>
+
+        <div class="px-8 pb-8 flex-1 z-10">
+            <div class="grid content-grid grid-cols-1 xl:grid-cols-12 gap-8">
+                
+                <!-- Left Column: Input Form -->
+                <div class="xl:col-span-4 space-y-6">
+                    <div class="glass-card rounded-2xl p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold text-white">Patient Telemetry</h3>
+                            <span class="text-xs font-semibold bg-purple-500/10 text-purple-400 px-2 py-1 rounded border border-purple-500/20">LIVE POST</span>
+                        </div>
+
+                        <form id="engineForm" class="space-y-4">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Age</label>
+                                <input type="number" id="age" value="26" class="w-full rounded-lg px-4 py-2.5 text-sm" required>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1 flex justify-between">
+                                    Sleep Duration <span class="text-gray-500 text-xs">(hours)</span>
+                                </label>
+                                <input type="number" id="sleep" step="0.5" value="5.5" class="w-full rounded-lg px-4 py-2.5 text-sm" required>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Stress (1-10)</label>
+                                    <input type="number" id="stress" value="8" min="1" max="10" class="w-full rounded-lg px-4 py-2.5 text-sm" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Activity (1-10)</label>
+                                    <input type="number" id="activity" value="3" min="1" max="10" class="w-full rounded-lg px-4 py-2.5 text-sm" required>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-800">
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Cycle Day</label>
+                                    <input type="number" id="cycle" value="23" title="Enter 0 if male/not tracking" class="w-full rounded-lg px-4 py-2.5 text-sm" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Base Length</label>
+                                    <input type="number" id="base_cycle" value="28" class="w-full rounded-lg px-4 py-2.5 text-sm" required>
+                                </div>
+                            </div>
+
+                            <div class="pt-4">
+                                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 transition-colors text-white font-medium py-3 rounded-xl shadow-lg shadow-purple-600/20 flex justify-center items-center gap-2">
+                                    <span>Execute Quantile Pipeline</span>
+                                    <div id="loader" class="spinner ml-2" style="display:none; border-top-color: white;"></div>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Right Column: Outputs -->
+                <div class="xl:col-span-8 space-y-6" id="results-container">
+                    
+                    <!-- Top Metrics Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        
+                        <div class="glass-card rounded-2xl p-6 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-4 opacity-10">
+                                <svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"></path></svg>
+                            </div>
+                            <h3 class="text-gray-400 text-sm font-medium mb-1">Median PHQ Estimate</h3>
+                            <div class="text-4xl font-bold text-white tracking-tight" id="valEstimate">--</div>
+                            <div class="mt-2 text-xs text-gray-500 font-mono">Bound Upper Limit: 27.0</div>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-6">
+                            <h3 class="text-gray-400 text-sm font-medium mb-1">Clinical Severity Band</h3>
+                            <div class="text-3xl font-bold tracking-tight mb-2" id="valSeverity">--</div>
+                            <div class="text-xs font-semibold px-2 py-1 rounded bg-gray-800 inline-block border border-gray-700" id="valProb">
+                                Referral Risk: --%
+                            </div>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-6 border-indigo-900/50">
+                            <h3 class="text-indigo-300 text-sm font-medium mb-1">Distributional Envelope</h3>
+                            <div class="text-2xl font-mono text-white mt-2" id="valInterval">[ -- , -- ]</div>
+                            <div class="mt-2 text-xs text-indigo-400">10th – 90th Quantile Target</div>
+                        </div>
+                    </div>
+
+                    <!-- Explainer Chart Section -->
+                    <div class="glass-card rounded-2xl p-6">
+                        <div class="flex justify-between items-end mb-6">
+                            <div>
+                                <h3 class="text-lg font-semibold text-white">Confidence Intervals</h3>
+                                <p class="text-sm text-gray-400">Visual mapping of the patient-specific variance structural bounds.</p>
+                            </div>
+                        </div>
+                        <div class="canvas-wrapper">
+                            <canvas id="intervalChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- NLG SHAP Section -->
+                    <div class="glass-card rounded-2xl p-6 border-l-4 border-purple-500">
+                        <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">Model Attribution Array</h3>
+                        <p class="text-lg italic text-gray-200 leading-relaxed font-light" id="valNLG">
+                            Awaiting payload injection. Submit the form to generate rule-based interpretations of SHAP proximal outputs.
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let chartInstance = null;
+
+        document.getElementById("engineForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btnText = e.target.querySelector('span');
+            const loader = document.getElementById('loader');
+            
+            btnText.style.opacity = '0.5';
+            loader.style.display = 'block';
+            document.getElementById('results-container').classList.remove('active');
+            
+            let cv = parseFloat(document.getElementById('cycle').value);
+            let cb = parseFloat(document.getElementById('base_cycle').value);
+            let hormone = cv === 0 ? 0 : Math.sin(2 * Math.PI * cv / cb);
+
+            const payload = {
+                "Age": parseFloat(document.getElementById('age').value),
+                "Sleep Duration": parseFloat(document.getElementById('sleep').value),
+                "Stress Level": parseFloat(document.getElementById('stress').value),
+                "Physical Activity Level": parseFloat(document.getElementById('activity').value),
+                "Cycle_Day": cv, "Base_Cycle_Length": cb, "Hormone_Proxy": hormone
+            };
+
+            try {
+                const res = await fetch('http://127.0.0.1:5000/predict', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if(!res.ok) throw new Error("API returned non-200 status");
+                const data = await res.json();
+                
+                if(data.error) throw new Error(data.error);
+
+                // Populate UI
+                const p = data.prediction;
+                document.getElementById('valEstimate').innerText = p.phq_point_estimate.toFixed(1);
+                
+                const sevEl = document.getElementById('valSeverity');
+                sevEl.innerText = p.predicted_severity;
+                sevEl.className = `text-3xl font-bold tracking-tight mb-2 severity-${p.predicted_severity.split(' ')[0]}`;
+                
+                document.getElementById('valProb').innerText = `Referral Risk: ${(p.referral_probability*100).toFixed(0)}%`;
+                document.getElementById('valInterval').innerText = `[ ${p.confidence_interval[0].toFixed(1)} , ${p.confidence_interval[1].toFixed(1)} ]`;
+                document.getElementById('valNLG').innerText = `"${data.explainability.nlg_summary}"`;
+                
+                renderChart(p.confidence_interval[0], p.phq_point_estimate, p.confidence_interval[1]);
+                document.getElementById('results-container').classList.add('active');
+
+            } catch (err) {
+                alert("Backend Evaluation Error: " + err.message + "\nEnsure your Python backend is running.");
+            } finally {
+                btnText.style.opacity = '1';
+                loader.style.display = 'none';
+            }
+        });
+
+        // Setup Chart.js Defaults for Dark Mode
+        Chart.defaults.color = '#9ca3af';
+        Chart.defaults.font.family = 'Inter, sans-serif';
+
+        function renderChart(low, mid, high) {
+            const ctx = document.getElementById('intervalChart').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+            
+            // Build gradient for the envelope
+            const gradient = ctx.createLinearGradient(0, 0, 800, 0);
+            gradient.addColorStop(0, 'rgba(147, 51, 234, 0.1)');
+            gradient.addColorStop(0.5, 'rgba(147, 51, 234, 0.5)');
+            gradient.addColorStop(1, 'rgba(147, 51, 234, 0.1)');
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Variance Envelope'],
+                    datasets: [
+                        { 
+                            label: 'Base Offset', 
+                            data: [[0, low]], 
+                            backgroundColor: 'transparent',
+                            borderColor: 'transparent',
+                        },
+                        { 
+                            label: '10th - 90th Quantile Envelope', 
+                            data: [[low, high]], 
+                            backgroundColor: gradient,
+                            borderColor: '#9333ea', 
+                            borderWidth: { top: 0, bottom: 0, left: 2, right: 2 },
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            min: 0, max: 27, 
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            title: { display: true, text: 'Clinical PHQ-9 Scale Vector', color: '#6b7280' }
+                        },
+                        y: { stacked: false, display: false }
+                    },
+                    plugins: {
+                        tooltip: { backgroundColor: 'rgba(17, 24, 39, 0.9)', titleColor: '#fff', padding: 12 },
+                        legend: { display: false }
+                    }
+                },
+                plugins: [{
+                    id: 'medianLine',
+                    afterDraw(chart) {
+                        const {ctx, chartArea: {top, bottom}, scales: {x}} = chart;
+                        const midPx = x.getPixelForValue(mid);
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.moveTo(midPx, top + 20);
+                        ctx.lineTo(midPx, bottom - 20);
+                        ctx.lineWidth = 3;
+                        ctx.strokeStyle = '#f4f4f5';
+                        ctx.stroke();
+                        ctx.restore();
+                        
+                        // Label text above line
+                        ctx.fillStyle = '#f4f4f5';
+                        ctx.font = '600 12px Inter';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('Median Point', midPx, top + 10);
+                    }
+                }]
+            });
+        }
+    </script>
+</body>
+</html>

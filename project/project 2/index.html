@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Luna Aura - Cycle-aware behavioral analytics platform for mental wellbeing research">
+    <meta name="theme-color" content="#1f2937">
+    <title>Luna Aura - Behavioral Analytics Platform</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; color: #f3f4f6; background-color: #030712;
+        }
+        button { cursor: pointer; user-select: none; }
+        input, select, textarea { font-family: inherit; }
+        .spinner {
+            display: inline-block; width: 20px; height: 20px;
+            border: 3px solid rgba(209, 213, 219, 0.3); border-top-color: #9333ea;
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .emoji-btn { transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease; font-size: 2.5rem; cursor: pointer; outline: none; }
+        .emoji-btn:hover { transform: scale(1.15); }
+        .emoji-btn:focus { outline: 2px solid #9333ea; outline-offset: 2px; }
+        .emoji-btn.selected { transform: scale(1.25); background-color: rgba(147, 51, 234, 0.2); border-color: #9333ea; }
+        .value-pulse { animation: pulse-update 0.5s ease; }
+        @keyframes pulse-update { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        input[type="range"] { accent-color: #9333ea; width: 100%; }
+        input[type="range"]:focus { outline: 2px solid #9333ea; outline-offset: 2px; }
+        .nav-btn { position: relative; transition: all 0.2s ease; }
+        .nav-btn:focus { outline: 2px solid #9333ea; outline-offset: -2px; }
+        .nav-btn.bg-purple-600 { box-shadow: 0 0 12px rgba(147, 51, 234, 0.3); }
+        label { display: block; }
+        h1, h2, h3, h4, h5, h6 { font-weight: 600; letter-spacing: -0.025em; }
+        .metric-card { transition: all 0.3s ease; }
+        .metric-card:hover { border-color: #9333ea; box-shadow: 0 0 12px rgba(147, 51, 234, 0.1); }
+        @media (max-width: 768px) {
+            #app-container { flex-direction: column; }
+            aside { width: 100% !important; border-right: none; border-bottom: 1px solid #1f2937; }
+            nav { flex-direction: row; overflow-x: auto; padding: 0.5rem; }
+            .nav-btn { white-space: nowrap; }
+            main { width: 100%; }
+            .grid-cols-1 { grid-template-columns: 1fr; }
+            h2 { font-size: 1.5rem; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-950 text-gray-100">
+    <div id="auth-container" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center px-4">
+        <div class="w-full max-w-md">
+            <div class="bg-gray-900 border border-gray-800 rounded-lg p-8 shadow-2xl">
+                <div class="text-center mb-8">
+                    <div class="text-4xl mb-3" aria-hidden="true">🌙</div>
+                    <h1 class="text-3xl font-bold text-white mb-2">Luna Aura</h1>
+                    <p class="text-sm text-gray-400">Behavioral Analytics Platform</p>
+                </div>
+
+                <form id="auth-form" class="space-y-4" novalidate>
+                    <div>
+                        <label for="auth-username" class="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                        <input type="text" id="auth-username" class="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition" placeholder="e.g. Eshita" required aria-label="Username">
+                    </div>
+                    <div id="auth-error" class="hidden text-red-500 text-sm text-center">User not found.</div>
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" id="auth-login-btn" class="flex-1 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-medium py-2 rounded transition focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 focus:ring-offset-gray-900" aria-label="Log in to your account">Login</button>
+                        <button type="button" id="auth-signup-btn" class="flex-1 bg-gray-800 hover:bg-gray-700 active:bg-gray-600 text-white font-medium py-2 rounded transition focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900" aria-label="Create a new account">Sign Up</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container" class="flex h-screen overflow-hidden">
+        <aside class="w-56 bg-gray-900 border-r border-gray-800 flex flex-col" role="navigation" aria-label="Main navigation">
+            <div class="p-6 border-b border-gray-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-purple-600 rounded flex items-center justify-center text-lg font-bold" aria-hidden="true">🌙</div>
+                    <div><h1 class="text-lg font-bold text-white">Luna Aura</h1><p class="text-xs text-gray-400">Research Platform</p></div>
+                </div>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-1">
+                <button class="nav-btn w-full text-left px-4 py-2 rounded transition text-gray-300 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-inset" data-page="dashboard" aria-current="page">Dashboard</button>
+                <button class="nav-btn w-full text-left px-4 py-2 rounded transition text-gray-300 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-inset" data-page="daily-log">Daily Log</button>
+                <button class="nav-btn w-full text-left px-4 py-2 rounded transition text-gray-300 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-inset" data-page="analytics">Analytics</button>
+                <button class="nav-btn w-full text-left px-4 py-2 rounded transition text-gray-300 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-inset" data-page="model-insights">Model Insights</button>
+                <button class="nav-btn w-full text-left px-4 py-2 rounded transition text-gray-300 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-inset" data-page="research-mode">Research Mode</button>
+            </nav>
+
+            <div class="p-4 border-t border-gray-800">
+                <button id="auth-toggle-btn" class="w-full bg-gray-800 hover:bg-gray-700 active:bg-gray-600 text-gray-300 text-sm py-2 rounded transition focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900" aria-label="Toggle Authentication">Login</button>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col overflow-hidden" role="main">
+            <header class="bg-gray-900 border-b border-gray-800 px-8 py-6 flex-shrink-0 flex justify-between items-start">
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-2">Luna Aura</h2>
+                    <p class="text-sm font-medium text-purple-400 mb-3">Cycle-Aware AI Mental Wellbeing Intelligence</p>
+                </div>
+                <div class="flex items-center gap-2 bg-gray-800 border border-gray-700 px-3 py-1.5 rounded-full shadow-inner">
+                    <div id="server-dot" class="w-2.5 h-2.5 rounded-full bg-gray-500 transition-colors duration-500"></div>
+                    <span id="server-status" class="text-xs font-medium text-gray-300">Checking API...</span>
+                </div>
+            </header>
+            <div class="px-8 pt-4 pb-2">
+                <p class="text-sm text-gray-400 leading-relaxed max-w-4xl">
+                    Luna Aura is a behavioral analytics platform designed to explore how physiological and lifestyle signals influence mental wellbeing. The system analyzes daily behavioral inputs including sleep duration, perceived stress, mood state, physical activity, and menstrual cycle phase. Machine learning models trained on behavioral datasets evaluate relationships between these signals to estimate potential fluctuations in emotional wellbeing. Rather than diagnosing mental health conditions, the system provides interpretable analytics that help researchers and individuals understand how behavioral patterns interact with cognitive and emotional states.
+                </p>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-8">
+                <div id="page-content" role="region" aria-live="polite" aria-atomic="true"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js" defer></script>
+</body>
+</html>
