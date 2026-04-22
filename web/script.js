@@ -319,7 +319,7 @@ function renderDashboard(content) {
                 </div>
                 
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col items-center justify-center shadow-xl relative">
-                    <h4 class="text-sm font-semibold text-gray-400 absolute top-6 left-6">Wellness Score</h4>
+                    <h4 class="text-sm font-semibold text-gray-400 absolute top-6 left-6">Behavioral Wellness Estimate</h4>
                     <div class="relative w-32 h-32 mt-6">
                         <svg class="w-full h-full transform -rotate-90">
                             <circle cx="64" cy="64" r="56" stroke="currentColor" stroke-width="8" fill="transparent" class="text-gray-800"/>
@@ -339,14 +339,14 @@ function renderDashboard(content) {
             </div>
 
             <div id="dashboard-charts-block" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 hidden">
-                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Wellness Trend</h4><div style="height:200px;"><canvas id="chart-mood-forecast"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: historic wellness scores.</p></div>
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Trend Projection</h4><div style="height:200px;"><canvas id="chart-mood-forecast"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: historic wellness scores.</p></div>
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Stress Trajectory</h4><div style="height:200px;"><canvas id="chart-stress-trend"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: actual physiological stress records.</p></div>
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Sleep/Activity</h4><div style="height:200px;"><canvas id="chart-sleep-proj"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: true recovery and physical activity vectors.</p></div>
             </div>
             
             <div id="dashboard-prob-block" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 hidden">
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg">
-                    <h4 class="font-semibold text-white mb-4">Risk Probability</h4>
+                    <h4 class="font-semibold text-white mb-4">Risk Indicator</h4>
                     <div class="relative mx-auto" style="height:220px; width:220px;"><canvas id="chart-risk-dist"></canvas></div>
                     <p class="text-xs text-center text-gray-500 mt-4">Driven by: Distributed native regression outputs mapping severity bounds.</p>
                 </div>
@@ -369,7 +369,7 @@ function renderDashboard(content) {
                 </div>
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
                     <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
-                    <h4 class="font-semibold text-white mb-4">Recovery Recommendations</h4>
+                    <h4 class="font-semibold text-white mb-4">Personalized Insights</h4>
                     <ul id="rec-list" class="space-y-4 text-gray-300 text-sm">
                         <li class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">Awaiting inference...</li>
                     </ul>
@@ -884,6 +884,44 @@ function renderResearchMode(content) {
                         <p>
                             <strong class="text-yellow-400">Cycle Dynamics Assumptions:</strong> Cycle variance maps to established biological rhythms, assuming a normal harmonic sequence. Actual patient biology may drastically differ; the model interprets timeline context as a general behavioral modifier layer, entirely constrained within a strict 10% maximum factor weight penalty limit.
                         </p>
+                    </div>
+                </div>
+
+                <!-- Transparency: Real vs Simulated -->
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-lg">
+                    <h4 class="text-xl font-bold text-white mb-4 flex items-center gap-3"><span class="text-teal-400">04.</span> Transparency: Real vs Simulated Data</h4>
+                    <p class="text-gray-400 leading-relaxed text-sm mb-4">
+                        To protect privacy and ensure a robust testing environment, Luna Aura uses a hybrid data pipeline bridging real user activity with synthetic distributions:
+                    </p>
+                    <ul class="text-sm text-gray-400 space-y-3 list-disc list-inside bg-gray-800/50 p-6 rounded-lg border border-gray-700/50">
+                        <li><strong>Real Data (Your Inputs):</strong> When you use "Inject Signal", the platform securely stores your exact inputs directly onto your local database. These inputs actively shape your baseline logic instantly.</li>
+                        <li><strong>Simulated Data (Cohort Generation):</strong> To allow immediate exploration without waiting 30 days for data maturity, the platform initializes with a mathematically constrained 100-user pseudo-cohort. These synthetic users feature logical bounding (e.g. stress negatively impacts sleep uniformly) mimicking true PHQ metrics strictly for demonstration purposes.</li>
+                    </ul>
+                </div>
+
+                <!-- Academic References & Citations -->
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-lg">
+                    <h4 class="text-xl font-bold text-white mb-4 flex items-center gap-3"><span class="text-gray-400">05.</span> Academic References & Citations</h4>
+                    <p class="text-gray-500 leading-relaxed text-sm mb-6">
+                        The heuristic thresholds and algorithmic structure driving Luna Aura's risk mapping are informed by established clinical and academic research standards.
+                    </p>
+                    <div class="text-sm text-gray-400 space-y-4">
+                        <div>
+                            <strong class="text-white">Sleep Science:</strong> 
+                            <p class="mt-1 italic">Hirshkowitz, M., et al. (2015). "National Sleep Foundation's updated sleep duration recommendations". Sleep Health. Validates the 7-9 hour optimal boundary.</p>
+                        </div>
+                        <div>
+                            <strong class="text-white">Physical Activity & Stress:</strong> 
+                            <p class="mt-1 italic">Schuch, F. B., et al. (2018). "Physical Activity and Incident Depression: A Meta-Analysis of Prospective Cohort Studies". American Journal of Psychiatry. Informs the activity deficit penalty floor.</p>
+                        </div>
+                        <div>
+                            <strong class="text-white">PHQ Background:</strong> 
+                            <p class="mt-1 italic">Kroenke, K., et al. (2001). "The PHQ-9: validity of a brief depression severity measure". Journal of General Internal Medicine. Frames the severity distributions without directly diagnosing.</p>
+                        </div>
+                        <div>
+                            <strong class="text-white">Explainable AI (XAI):</strong> 
+                            <p class="mt-1 italic">Lundberg, S. M., & Lee, S. I. (2017). "A unified approach to interpreting model predictions". Advances in Neural Information Processing Systems. Drives the feature attribution breakdown model.</p>
+                        </div>
                     </div>
                 </div>
             </div>

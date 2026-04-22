@@ -40,5 +40,5 @@ Alternatively, you can skip login via "Explore Demo" to view population macro-te
 
 ## 📖 Extended Documentation
 
-- Read **`ARCHITECTURE.md`** for a deep dive into the ML ensemble structure, data structuring via k-NN loops, and explainability implementations.
-- Read **`RUN_STEPS.md`** for further technical step-by-step diagnostic workflows.
+- Read **`docs/ARCHITECTURE.md`** for a deep dive into the ML ensemble structure, data structuring via k-NN loops, and explainability implementations.
+- Read **`docs/RUN_STEPS.md`** for further technical step-by-step diagnostic workflows.
