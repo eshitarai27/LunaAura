@@ -1,0 +1,5 @@
+Study,Task,Model,Best Metric,Limitation/Advantage
+Wang et al. (2021),PHQ-9 Prediction,Logistic Regression,AUC 0.78,No cycle context
+Smith et al. (2022),Stress Detection,LSTM,F1 0.81,No personalization
+Chen et al. (2023),Wellness Scoring,Random Forest,AUC 0.83,Binary output only
+LunaAura (2026),Composite Behavioral Risk,Deterministic + RF + Quantile Reg,AUC 0.437,"Cycle-aware, gender-adaptive, longitudinal"

@@ -1,0 +1,10 @@
+Feature,Unit,Range,Description
+Sleep Duration,Hours (h),0–12,Daily sleep logged by user
+Stress Level,Ordinal (1–10),1–10,Self-reported daily stress
+Physical Activity,Minutes/day (min),0–120,Exercise duration per day
+Anxiety Level,Ordinal (1–10),1–10,Self-reported anxiety score
+Water Intake,Litres (L),0–5,Daily hydration logged
+Cycle Day,Integer (days),1–35,Menstrual cycle day (Female only)
+Age,Years,18–60,User registration age
+Cycle Length,Days,21–35,User-declared cycle length
+Gender,Categorical,Female/Male/Other,User gender identity

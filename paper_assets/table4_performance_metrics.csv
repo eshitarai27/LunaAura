@@ -1,0 +1,7 @@
+Metric,Value,Source
+ROC-AUC (Binary),0.4372,Risk Classifier
+PR-AUC (Binary),0.5479,Risk Classifier
+RMSE (Risk %),21.33,Composite Formula vs DB logs
+MAE (Risk %),17.77,Composite Formula vs DB logs
+Total Users,105,SQLite DB
+Total Log Entries,470,SQLite DB

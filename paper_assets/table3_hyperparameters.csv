@@ -1,0 +1,9 @@
+Model,Parameter,Value
+Random Forest Classifier,n_estimators,200
+Random Forest Classifier,max_depth,12
+Random Forest Classifier,min_samples_split,5
+Random Forest Classifier,class_weight,balanced
+Quantile Regressor (q10/q50/q90),alpha,0.10 / 0.50 / 0.90
+Quantile Regressor,solver,highs
+CalibratedClassifierCV,method,sigmoid
+CalibratedClassifierCV,cv,5-fold
