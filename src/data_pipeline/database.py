@@ -22,16 +22,33 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
+    # Check if DB is already initialized
+    cursor.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='users'")
+    if cursor.fetchone()[0] == 1:
+        cursor.execute("SELECT count(*) FROM users")
+        if cursor.fetchone()[0] > 10:
+            conn.close()
+            print("Database already populated. Bypassing initialization.")
+            return
+
     # User Profile Table
+    cursor.execute('DROP TABLE IF EXISTS users;')
+    cursor.execute('DROP TABLE IF EXISTS user_history;')
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE,
+        username TEXT UNIQUE,
+        password_hash TEXT,
         age INTEGER,
-        cohort_group TEXT,
-        source TEXT,
+        gender TEXT,
+        height_cm REAL,
+        weight_kg REAL,
+        cycle_length INTEGER,
+        sleep_target REAL,
         created_at TEXT,
-        gender TEXT DEFAULT 'Female'
+        updated_at TEXT,
+        cohort_group TEXT,
+        source TEXT
     )
     ''')
     
@@ -65,12 +82,12 @@ def init_db():
     conn.commit()
     conn.close()
 
-def _add_user(cursor, name, age, cohort, source, created_at):
+def _add_user(cursor, username, pw_hash, age, gender, height_cm, weight_kg, cycle, sleep, cohort, source, created_at):
     cursor.execute('''
-        INSERT OR IGNORE INTO users (name, age, cohort_group, source, created_at)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (name, age, cohort, source, created_at))
-    cursor.execute('SELECT id FROM users WHERE name = ?', (name,))
+        INSERT OR IGNORE INTO users (username, password_hash, age, gender, height_cm, weight_kg, cycle_length, sleep_target, created_at, updated_at, cohort_group, source)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (username, pw_hash, age, gender, height_cm, weight_kg, cycle, sleep, created_at, created_at, cohort, source))
+    cursor.execute('SELECT id FROM users WHERE username = ?', (username,))
     return cursor.fetchone()[0]
 
 def _add_history(cursor, user_id, date, sleep, stress, mood, cycle_day, phase, activity, wellness, risk, anxiety=5, water=2.0):
@@ -98,9 +115,14 @@ def _seed_db(cursor):
             uname = INDIAN_NAMES[name_idx % len(INDIAN_NAMES)]
             name_idx += 1
             age = random.randint(18, 55)
+            gender = random.choices(["Female", "Male", "Other"], weights=[0.8, 0.15, 0.05])[0]
+            height = round(random.uniform(150, 185), 1)
+            weight = round(random.uniform(50, 90), 1)
+            cycle = random.randint(26, 32) if gender == "Female" else 0
+            slp_target = round(random.uniform(6.5, 9.0), 1)
             created_at = (now - timedelta(days=random.randint(5, 30))).isoformat()
             
-            uid = _add_user(cursor, uname, age, p["risk"], "synthetic_cohort", created_at)
+            uid = _add_user(cursor, uname, f"{uname.lower()}_dummy", age, gender, height, weight, cycle, slp_target, p["risk"], "synthetic_cohort", created_at)
             
             # Add exactly 1 log for the generic tracker to keep analytics proportional
             sleep = round(random.uniform(*p["sleep_range"]), 1)
@@ -137,9 +159,9 @@ def _seed_db(cursor):
 
 def _generate_eshita(cursor, current_time):
     """Generates 30 realistic sequential days tracing Eshita's biological cycle drift natively."""
-    base_age = 26
+    base_age = 23
     start_time = (current_time - timedelta(days=30)).isoformat()
-    uid = _add_user(cursor, "Eshita", base_age, "Moderate", "tracked_super_user", start_time)
+    uid = _add_user(cursor, "Eshita", "eshita_dummy", base_age, "Female", 165.0, 60.0, 28, 8.0, "Moderate", "tracked_super_user", start_time)
     
     start_cycle_day = 1 # Assuming Day 1 = Menstruation 30 days ago
     
@@ -184,3 +206,8 @@ def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+if __name__ == '__main__':
+    print("Re-initializing Schema & Re-seeding User Profile Core...")
+    init_db()
+    print("Database built successfully.")

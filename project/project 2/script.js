@@ -10,61 +10,154 @@ let cohortRecords = [];
 let formData = { age: 26, gender: 'Female', sleep_duration: 7, stress_level: 2, physical_activity: 30, cycle_day: 14, base_cycle: 28, anxiety_level: 5, water_intake: 4 };
 let lastPrediction = null;
 
-function isLocalStorageAvailable() { try { localStorage.setItem('X', 'X'); localStorage.removeItem('X'); return true; } catch(e) { return false; } }
+function isSessionStorageAvailable() { try { sessionStorage.setItem('X', 'X'); sessionStorage.removeItem('X'); return true; } catch(e) { return false; } }
 
 function checkAuth() {
-    const authC = document.getElementById('auth-container');
+    const authC = document.getElementById('landing-container');
     const appC = document.getElementById('app-container');
-    appC.style.display = 'flex'; // ALWAYS visible
-    authC.style.display = 'none';
 
-    if (!isLocalStorageAvailable()) { initializeAuth(); return; }
+    if (!isSessionStorageAvailable()) { initializeAuth(); return; }
 
-    const user = localStorage.getItem('luna_user');
+    const user = sessionStorage.getItem('luna_user');
     const toggleBtn = document.getElementById('auth-toggle-btn');
 
+    const stBtn = document.getElementById('nav-settings-btn');
     if (user) {
         currentUser = JSON.parse(user);
         toggleBtn.innerText = 'Logout';
         toggleBtn.onclick = logout;
+        if(stBtn) stBtn.style.display = 'block';
+        const p = currentUser.profile;
+        if(p) {
+            formData.gender = p.gender;
+            formData.base_cycle = p.cycle_length;
+            formData.age = p.age;
+            
+            document.getElementById('header-welcome-msg').innerHTML = `Welcome, ${p.username} <span class="text-sm font-medium text-gray-400">| Age: ${p.age} | Base Loaded</span>`;
+            document.getElementById('header-subtitle-msg').innerText = "Personalized Context Authenticated";
+        }
         if (currentUser.history && currentUser.history.length > 0) {
             dataHistory = currentUser.history;
-            lastPrediction = currentUser; // Explicitly map uniform API Payload object natively
+            lastPrediction = currentUser; 
         }
     } else {
         currentUser = null;
+        appC.style.display = 'none';
+        authC.style.display = 'flex'; 
+        document.getElementById('auth-signup-fields').classList.add('hidden');
+        
         toggleBtn.innerText = 'Login';
-        toggleBtn.onclick = () => { authC.style.display = 'flex'; };
+        toggleBtn.onclick = () => { 
+            appC.style.display = 'none';
+            authC.style.display = 'flex';
+        };
+        if(stBtn) stBtn.style.display = 'none';
+        document.getElementById('header-welcome-msg').innerText = `Welcome to Luna Aura`;
+        document.getElementById('header-subtitle-msg').innerText = "Cycle-Aware AI Mental Wellbeing Intelligence";
     }
     initializeAuth();
     initializeApp();
 }
 
+let isSignupMode = false;
 function initializeAuth() {
-    document.getElementById('auth-login-btn').addEventListener('click', login);
-    const signupBtn = document.getElementById('auth-signup-btn');
-    if(signupBtn) signupBtn.addEventListener('click', () => { 
-        document.getElementById('auth-container').style.display = 'none'; 
-    }); // Close overlay
+    const signupToggle = document.getElementById('auth-toggle-signup-btn');
+    const loginBtn = document.getElementById('auth-login-btn');
+    const authTitle = document.getElementById('auth-title');
+    
+    document.getElementById('demo-btn').addEventListener('click', () => {
+        document.getElementById('landing-container').style.display = 'none';
+        document.getElementById('app-container').style.display = 'flex';
+        navigateTo('analytics');
+    });
+    if(signupToggle) {
+        signupToggle.addEventListener('click', () => {
+            isSignupMode = !isSignupMode;
+            const sf = document.getElementById('auth-signup-fields');
+            if (isSignupMode) {
+                sf.classList.remove('hidden');
+                signupToggle.innerText = 'Switch to Login';
+                loginBtn.innerText = 'Create Profile';
+                authTitle.innerText = 'Initialization';
+            } else {
+                sf.classList.add('hidden');
+                signupToggle.innerText = 'Create an Account';
+                loginBtn.innerText = 'Login';
+                authTitle.innerText = 'Welcome Back';
+            }
+        });
+    }
+    if(loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            if(isSignupMode) signup(); else login();
+        });
+    }
 }
 
 async function login() {
     const u = document.getElementById('auth-username').value.trim();
-    if (!u) return;
+    const p = document.getElementById('auth-password').value.trim();
+    if (!u || !p) return;
     
     document.getElementById('auth-error').classList.add('hidden');
     
     try {
-        const response = await fetch(`${API_BASE}/user/${u}`);
+        const response = await fetch(`${API_BASE}/login`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({username: u, password: p})
+        });
         if(response.ok) {
             const payload = await response.json();
-            localStorage.setItem('luna_user', JSON.stringify(payload));
+            sessionStorage.setItem('luna_user', JSON.stringify(payload));
             currentUser = payload;
             lastPrediction = payload;
-            document.getElementById('auth-container').style.display = 'none';
-            checkAuth(); // Re-verify auth locally!
-            navigateTo('dashboard'); // Render cleanly natively without refresh bugs!
+            document.getElementById('landing-container').style.display = 'none';
+            document.getElementById('app-container').style.display = 'flex';
+            checkAuth();
+            navigateTo('dashboard');
         } else {
+            document.getElementById('auth-error').innerText = "Invalid credentials or User not found.";
+            document.getElementById('auth-error').classList.remove('hidden');
+        }
+    } catch(e) {
+        document.getElementById('auth-error').innerText = "Server Error. Ensure Python backend is running.";
+        document.getElementById('auth-error').classList.remove('hidden');
+    }
+}
+
+async function signup() {
+    const u = document.getElementById('auth-username').value.trim();
+    const p = document.getElementById('auth-password').value.trim();
+    if (!u || !p) return;
+    
+    document.getElementById('auth-error').classList.add('hidden');
+    
+    const payloadReq = {
+        username: u, password: p,
+        age: document.getElementById('auth-age').value,
+        gender: document.getElementById('auth-gender').value,
+        height_cm: document.getElementById('auth-height').value,
+        weight_kg: document.getElementById('auth-weight').value,
+        cycle_length: document.getElementById('auth-cycle').value,
+        sleep_target: document.getElementById('auth-sleep').value
+    };
+    
+    try {
+        const response = await fetch(`${API_BASE}/signup`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payloadReq)
+        });
+        if(response.ok) {
+            const payload = await response.json();
+            sessionStorage.setItem('luna_user', JSON.stringify(payload));
+            currentUser = payload;
+            lastPrediction = payload;
+            document.getElementById('landing-container').style.display = 'none';
+            document.getElementById('app-container').style.display = 'flex';
+            checkAuth();
+            navigateTo('dashboard');
+        } else {
+            document.getElementById('auth-error').innerText = "Username already exists.";
             document.getElementById('auth-error').classList.remove('hidden');
         }
     } catch(e) {
@@ -74,7 +167,7 @@ async function login() {
 }
 
 function logout() { 
-    localStorage.removeItem('luna_user'); 
+    sessionStorage.removeItem('luna_user'); 
     dataHistory = [];
     lastPrediction = null;
     checkAuth();
@@ -131,6 +224,18 @@ async function fetchCohortData() {
 }
 
 function navigateTo(page) {
+    if (page === 'daily-log' && (!currentUser || !currentUser.profile || currentUser.profile.username === 'Guest')) {
+        document.getElementById('page-content').innerHTML = `
+            <div class="flex flex-col items-center justify-center p-12 mt-12 text-center bg-gray-900 border border-gray-800 rounded-2xl max-w-2xl mx-auto shadow-2xl">
+                <div class="text-6xl mb-6">🔒</div>
+                <h3 class="text-2xl font-bold text-white mb-4">Authentication Required</h3>
+                <p class="text-gray-400 mb-8">Signal injections map directly to your personal physiological baseline. Please login or create a persistent account to access the Daily Log.</p>
+                <button onclick="document.getElementById('app-container').style.display = 'none'; document.getElementById('landing-container').style.display = 'flex'; document.getElementById('auth-signup-fields').classList.add('hidden');" class="bg-purple-600 px-6 py-3 rounded-lg text-white font-medium hover:bg-purple-500 transition shadow-lg shadow-purple-900/40">Switch to Login Module</button>
+            </div>
+        `;
+        return;
+    }
+
     currentPage = page;
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('bg-purple-600', 'text-white');
@@ -158,6 +263,7 @@ function renderPage() {
         case 'analytics': renderAnalytics(content); break;
         case 'model-insights': renderModelInsights(content); break;
         case 'research-mode': renderResearchMode(content); break;
+        case 'profile-settings': renderProfileSettings(content); break;
     }
 }
 
@@ -165,6 +271,37 @@ function renderPage() {
 // DASHBOARD
 // ============================================
 function renderDashboard(content) {
+    if (currentUser && (!dataHistory || dataHistory.length === 0)) {
+        content.innerHTML = `
+            <div class="space-y-6 animate-fade-in pb-12">
+                <div class="flex flex-col items-center justify-center bg-gray-900 border border-gray-800 p-12 rounded-2xl shadow-xl text-center mt-8">
+                    <div class="text-6xl mb-6">🌱</div>
+                    <h3 class="text-3xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent mb-4">Welcome to Luna Aura</h3>
+                    <p class="text-gray-400 max-w-2xl text-lg mb-8 leading-relaxed">
+                        Your personalized behavioral baseline profile has been initialized securely. 
+                        Currently, you have <span class="text-white font-bold">0 records</span> in your tracking history.
+                    </p>
+                    <div class="w-full max-w-md bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-8 text-left space-y-4 shadow-inner">
+                        <h4 class="text-sm tracking-widest text-gray-500 font-bold uppercase mb-2">Maturity Path:</h4>
+                        <div class="flex justify-between items-center text-sm"><span class="text-gray-300">Phase 1: First Entry</span><span class="text-purple-400 font-mono">1 Log</span></div>
+                        <div class="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden"><div class="bg-gray-600 h-full w-[0%]"></div></div>
+                        
+                        <div class="flex justify-between items-center text-sm"><span class="text-gray-400">Phase 2: Weekly Trend</span><span class="text-gray-500 font-mono">7 Logs</span></div>
+                        <div class="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden"><div class="bg-gray-600 h-full w-[0%]"></div></div>
+                        
+                        <div class="flex justify-between items-center text-sm"><span class="text-gray-400">Phase 3: Rolling Analytics</span><span class="text-gray-500 font-mono">30 Logs</span></div>
+                        <div class="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden"><div class="bg-gray-600 h-full w-[0%]"></div></div>
+                    </div>
+                    
+                    <button onclick="navigateTo('daily-log')" class="bg-purple-600 px-8 py-4 rounded-xl text-white font-bold text-lg hover:bg-purple-500 transition shadow-lg shadow-purple-900/40 transform hover:-translate-y-1">
+                        Inject First Signal
+                    </button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
     content.innerHTML = `
         <div class="space-y-6 animate-fade-in pb-12">
             <div class="flex justify-between items-center bg-gray-900 border border-gray-800 p-4 rounded-xl shadow-lg">
@@ -173,9 +310,10 @@ function renderDashboard(content) {
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <!-- Fallback Summary if < 14 logs -->
                 <div class="md:col-span-3 bg-gradient-to-r from-gray-900 to-gray-800 border-l-4 border-purple-500 rounded-2xl p-8 relative overflow-hidden shadow-2xl">
                     <div class="absolute -right-10 -top-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl"></div>
-                    <h4 class="text-xs font-semibold uppercase tracking-widest text-purple-400 mb-2">Automated Insight</h4>
+                    <h4 class="text-xs font-semibold uppercase tracking-widest text-purple-400 mb-2" id="insight-badge">Automated Insight</h4>
                     <div id="summary-sentence" class="text-3xl font-bold text-white leading-tight">Waiting for dataset.</div>
                     <div id="what-changed" class="text-sm mt-4 text-gray-400 bg-gray-900/50 inline-block px-4 py-2 rounded-lg border border-gray-700 font-mono">Navigate to 'Inject Signal' to populate.</div>
                 </div>
@@ -192,7 +330,7 @@ function renderDashboard(content) {
                 </div>
             </div>
 
-            <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
+            <div id="dashboard-heatmap-block" class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl hidden">
                 <h4 class="text-sm font-semibold text-gray-400 mb-2">7-Day Risk Momentum Heatmap</h4>
                 <div id="heatmap-container" class="flex justify-between gap-2 h-12 mb-2">
                     <div class="flex-1 bg-gray-800 rounded-md"></div><div class="flex-1 bg-gray-800 rounded-md"></div><div class="flex-1 bg-gray-800 rounded-md"></div><div class="flex-1 bg-gray-800 rounded-md"></div><div class="flex-1 bg-gray-800 rounded-md"></div><div class="flex-1 bg-gray-800 rounded-md"></div><div class="flex-1 bg-gray-800 rounded-md"></div>
@@ -200,13 +338,13 @@ function renderDashboard(content) {
                 <p class="text-xs text-gray-500">Driven by: model risk probability + recent volatility variance.</p>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Wellness Trend</h4><div style="height:200px;"><canvas id="chart-mood-forecast"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: historic wellness scores + rolling analytics.</p></div>
+            <div id="dashboard-charts-block" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 hidden">
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Wellness Trend</h4><div style="height:200px;"><canvas id="chart-mood-forecast"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: historic wellness scores.</p></div>
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Stress Trajectory</h4><div style="height:200px;"><canvas id="chart-stress-trend"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: actual physiological stress records.</p></div>
-                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Sleep/Activity Trajectory</h4><div style="height:200px;"><canvas id="chart-sleep-proj"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: true recovery and physical activity vectors.</p></div>
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Sleep/Activity</h4><div style="height:200px;"><canvas id="chart-sleep-proj"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: true recovery and physical activity vectors.</p></div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div id="dashboard-prob-block" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 hidden">
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg">
                     <h4 class="font-semibold text-white mb-4">Risk Probability</h4>
                     <div class="relative mx-auto" style="height:220px; width:220px;"><canvas id="chart-risk-dist"></canvas></div>
@@ -247,18 +385,20 @@ function renderDashboard(content) {
         if (!currentUser && cohortAnalytics) {
             runPayload = {
                 charts: {
-                    mood_forecast: cohortAnalytics.mood_trend || [3.5, 3.6, 3.4, 3.5, 3.7, 3.6, 3.5],
+                    wellness_trend: cohortAnalytics.mood_trend || [3.5, 3.6, 3.4, 3.5, 3.7, 3.6, 3.5],
                     stress_trend: [4, 4.5, 4.2, 4.1, 4.4, 4.6, parseFloat(cohortAnalytics.avg_stress || 4.5)],
-                    sleep_projection: [7.1, 7.0, 7.3, 7.2, 6.9, 7.1, 7.0],
+                    sleep_trend: [7.1, 7.0, 7.3, 7.2, 6.9, 7.1, 7.0],
+                    risk_heatmap: [0.1, 0.12, 0.15, 0.11, 0.14, 0.13, 0.1],
                     risk_distribution: { Low: 65, Moderate: 25, High: 10 },
-                    phase_impact: { Menstrual: 10, Follicular: 10, Ovulatory: 10, Luteal: 10 }
+                    phase_influence: { Menstrual: 10, Follicular: 10, Ovulatory: 10, Luteal: 10 },
+                    factor_breakdown: {
+                        "Sleep": {score: 7, impact: "+10"}, "Stress": {score: 5, impact: "-5"}, "Activity": {score: 30, impact: "+2"}
+                    }
                 },
-                premium: {
+                summary: {
                     summary_sentence: "Population baseline actively monitored.",
                     what_changed_most: "Aggregate Cohort Telemetry",
-                    wellness_score: Math.round(parseFloat(cohortAnalytics.avg_wellness || 72)),
-                    factor_breakdown: { "Cohort Size": { score: cohortAnalytics.total_population || 100, impact: "+100" } },
-                    risk_heatmap: [0.1, 0.12, 0.15, 0.11, 0.14, 0.13, 0.1]
+                    wellness_score: Math.round(parseFloat(cohortAnalytics.avg_wellness || 72))
                 },
                 recommendation: {
                     action: [{type: "System Ready", priority: "LOW", message: "Login to activate personalized localized trace parameters."}]
@@ -268,10 +408,6 @@ function renderDashboard(content) {
 
         if (runPayload && runPayload.charts) {
             bindDashboardData(runPayload);
-        } else {
-            buildLineChart('chart-mood-forecast', [0,0,0,0,0,0,0], '#4b5563', 'Awaiting Data');
-            buildLineChart('chart-stress-trend', [0,0,0,0,0,0,0], '#4b5563', 'Awaiting Data');
-            buildLineChart('chart-sleep-proj', [0,0,0,0,0,0,0], '#4b5563', 'Awaiting Data');
         }
     });
 }
@@ -281,98 +417,120 @@ function bindDashboardData(payload) {
         const c = payload.charts;
         const p = payload.premium || payload.summary;
 
-        document.getElementById('summary-sentence').innerText = p.summary_sentence;
-        document.getElementById('what-changed').innerText = "💡 Insight: " + p.what_changed_most;
-
-        const ring = document.getElementById('score-ring');
-        document.getElementById('score-val').innerText = p.wellness_score;
-        const offset = 351 - (351 * (p.wellness_score / 100));
-        requestAnimationFrame(() => { ring.style.strokeDashoffset = offset; });
-        if(p.wellness_score < 40) ring.classList.replace('text-purple-500', 'text-red-500');
-        if(p.wellness_score > 75) ring.classList.replace('text-purple-500', 'text-green-500');
-
-        // Dynamically bind factor breakdown traces
-        const factorList = document.getElementById('factor-list');
-        if (c.factor_breakdown) {
-            factorList.innerHTML = '';
-            for (const [key, val] of Object.entries(c.factor_breakdown)) {
-                let color = val.impact.startsWith('-') ? 'text-red-400' : 'text-green-400';
-                factorList.innerHTML += `
-                    <li class="flex justify-between items-center bg-gray-800/50 px-3 py-2 rounded-lg border border-gray-700/50">
-                        <span class="text-gray-300 font-medium">${key}</span>
-                        <span class="flex gap-3">
-                            <span class="text-gray-500 font-mono">w·${val.score}</span>
-                            <span class="${color} font-bold w-10 text-right">${val.impact}</span>
-                        </span>
-                    </li>`;
+        // Apply Logic Thresholds
+        const L = (currentUser && currentUser.history) ? currentUser.history.length : 100;
+        
+        if(L >= 1) {
+            document.getElementById('summary-sentence').innerText = p.summary_sentence;
+            document.getElementById('what-changed').innerText = "💡 Insight: " + p.what_changed_most;
+    
+            const ring = document.getElementById('score-ring');
+            document.getElementById('score-val').innerText = p.wellness_score;
+            const offset = 351 - (351 * (p.wellness_score / 100));
+            requestAnimationFrame(() => { ring.style.strokeDashoffset = offset; });
+            if(p.wellness_score < 40) ring.classList.replace('text-purple-500', 'text-red-500');
+            if(p.wellness_score > 75) ring.classList.replace('text-purple-500', 'text-green-500');
+            
+            // Factor Breakdown
+            const factorList = document.getElementById('factor-list');
+            if (c.factor_breakdown) {
+                factorList.innerHTML = '';
+                for (const [key, val] of Object.entries(c.factor_breakdown)) {
+                    let color = val.impact.startsWith('-') ? 'text-red-400' : 'text-green-400';
+                    factorList.innerHTML += `
+                        <li class="flex justify-between items-center bg-gray-800/50 px-3 py-2 rounded-lg border border-gray-700/50">
+                            <span class="text-gray-300 font-medium">${key}</span>
+                            <span class="flex gap-3">
+                                <span class="text-gray-500 font-mono">w·${val.score}</span>
+                                <span class="${color} font-bold w-10 text-right">${val.impact}</span>
+                            </span>
+                        </li>`;
+                }
+            }
+            
+            // Recommendations
+            const recList = document.getElementById('rec-list');
+            if (payload.recommendation && payload.recommendation.action) {
+                recList.innerHTML = '';
+                payload.recommendation.action.forEach(rec => {
+                    let rCol = 'border-blue-500 text-blue-400';
+                    if (rec.priority === "HIGH") rCol = 'border-red-500 text-red-400';
+                    else if (rec.priority === "MEDIUM") rCol = 'border-yellow-500 text-yellow-400';
+                    recList.innerHTML += `
+                        <li class="p-4 bg-gray-800/50 rounded-lg border-l-4 ${rCol}">
+                            <div class="font-bold text-xs mb-1">${rec.type.toUpperCase()}</div>
+                            <div class="text-gray-300">${rec.message}</div>
+                        </li>`;
+                });
             }
         }
         
-        // Dynamically bind recommendations
-        const recList = document.getElementById('rec-list');
-        if (payload.recommendation && payload.recommendation.action) {
-            recList.innerHTML = '';
-            payload.recommendation.action.forEach(rec => {
-                let rCol = 'border-blue-500 text-blue-400';
-                if (rec.priority === "HIGH") rCol = 'border-red-500 text-red-400';
-                else if (rec.priority === "MEDIUM") rCol = 'border-yellow-500 text-yellow-400';
-                
-                recList.innerHTML += `
-                    <li class="p-4 bg-gray-800/50 rounded-lg border-l-4 ${rCol}">
-                        <div class="font-bold text-xs mb-1">${rec.type.toUpperCase()}</div>
-                        <div class="text-gray-300">${rec.message}</div>
-                    </li>`;
-            });
+        if (L < 7) {
+            document.getElementById('insight-badge').innerText = "Establishing Baseline Array (1/7)";
         }
 
-        const heatC = document.getElementById('heatmap-container');
-        heatC.innerHTML = '';
-        if(c.risk_heatmap) {
-            c.risk_heatmap.forEach((val, i) => {
-            const div = document.createElement('div');
-            div.className = 'flex-1 rounded-md transition duration-1000';
-            const g = Math.max(0, 255 - (val * 255));
-            const r = Math.min(255, val * 255 + 50);
-            div.style.backgroundColor = `rgba(${r}, ${g}, 50, 0.8)`;
-            div.style.opacity = 0;
-            heatC.appendChild(div);
+        if (L >= 7) {
+            document.getElementById('insight-badge').innerText = "Weekly Sequence Maturing (7/14)";
+            document.getElementById('dashboard-heatmap-block').classList.remove('hidden');
+            const heatC = document.getElementById('heatmap-container');
+            heatC.innerHTML = '';
+            if(c.risk_heatmap) {
+                c.risk_heatmap.forEach((val, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'flex-1 rounded-md transition duration-1000';
+                    const g = Math.max(0, 255 - (val * 255));
+                    const r = Math.min(255, val * 255 + 50);
+                    div.style.backgroundColor = `rgba(${r}, ${g}, 50, 0.8)`;
+                    div.style.opacity = 0;
+                    heatC.appendChild(div);
+                    setTimeout(() => div.style.opacity = 1, i * 100);
+                });
+            }
+        }
+        
+        if(L >= 14) {
+            document.getElementById('insight-badge').innerText = "Rolling Analytics Active (14/30)";
+            document.getElementById('dashboard-charts-block').classList.remove('hidden');
+            
+            let traceMood = c.wellness_trend || c.mood_forecast || [0,0,0,0];
+            let traceStress = c.stress_trend || [0,0,0,0];
+            let traceSleep = c.sleep_trend || c.sleep_projection || [0,0,0,0];
+            buildLineChart('chart-mood-forecast', traceMood, '#a855f7', 'Wellness Trend');
+            buildLineChart('chart-stress-trend', traceStress, '#ef4444', 'Stress Trend');
+            buildLineChart('chart-sleep-proj', traceSleep, '#3b82f6', 'Sleep Trend');
+        }
+        
+        if(L >= 30) {
+            document.getElementById('insight-badge').innerText = "Automated Insight";
+            document.getElementById('dashboard-prob-block').classList.remove('hidden');
+            
+            const phaseBars = document.getElementById('phase-bars');
+            phaseBars.innerHTML = '';
+            if(c.phase_influence) {
+                Object.entries(c.phase_influence).forEach(([name, val]) => {
+                const color = val > 50 ? 'bg-purple-500' : 'bg-gray-700';
+                phaseBars.innerHTML += `
+                    <div>
+                        <div class="flex justify-between text-xs mb-1"><span class="text-gray-300">${name} Phase</span><span class="text-white font-mono">${val}%</span></div>
+                        <div class="w-full bg-gray-800 rounded-full h-2"><div class="${color} h-2 rounded-full transition-all duration-1000" style="width: 0%" data-w="${val}%"></div></div>
+                    </div>`;
+                });
+                setTimeout(() => {
+                    document.querySelectorAll('#phase-bars > div > div > div.transition-all').forEach(bar => bar.style.width = bar.getAttribute('data-w'));
+                }, 50);
+            }
+            
+            const ctxRisk = document.getElementById('chart-risk-dist').getContext('2d');
+            if(charts.risk) charts.risk.destroy();
+            charts.risk = new Chart(ctxRisk, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Low', 'Moderate', 'High Risk'],
+                    datasets: [{ data: [c.risk_distribution.Low, c.risk_distribution.Moderate, c.risk_distribution.High], backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderWidth: 0 }]
+                },
+                options: { cutout: '75%', plugins: { legend: { position: 'bottom', labels: {color:'#fff'} } } }
             });
         }
-
-        const phaseBars = document.getElementById('phase-bars');
-        phaseBars.innerHTML = '';
-        if(c.phase_influence) {
-            Object.entries(c.phase_influence).forEach(([name, val]) => {
-            const color = val > 50 ? 'bg-purple-500' : 'bg-gray-700';
-            phaseBars.innerHTML += `
-                <div>
-                    <div class="flex justify-between text-xs mb-1"><span class="text-gray-300">${name} Phase</span><span class="text-white font-mono">${val}%</span></div>
-                    <div class="w-full bg-gray-800 rounded-full h-2"><div class="${color} h-2 rounded-full transition-all duration-1000" style="width: 0%" data-w="${val}%"></div></div>
-                </div>`;
-            });
-            setTimeout(() => {
-                document.querySelectorAll('#phase-bars > div > div > div.transition-all').forEach(bar => bar.style.width = bar.getAttribute('data-w'));
-            }, 50);
-        }
-
-        let traceMood = c.wellness_trend || c.mood_forecast || [0,0,0,0];
-        let traceStress = c.stress_trend || [0,0,0,0];
-        let traceSleep = c.sleep_trend || c.sleep_projection || [0,0,0,0];
-
-        buildLineChart('chart-mood-forecast', traceMood, '#a855f7', 'Wellness Trend');
-        buildLineChart('chart-stress-trend', traceStress, '#ef4444', 'Stress Trend');
-        buildLineChart('chart-sleep-proj', traceSleep, '#3b82f6', 'Sleep Trend');
-
-        const ctxRisk = document.getElementById('chart-risk-dist').getContext('2d');
-        if(charts.risk) charts.risk.destroy();
-        charts.risk = new Chart(ctxRisk, {
-            type: 'doughnut',
-            data: {
-                labels: ['Low', 'Moderate', 'High Risk'],
-                datasets: [{ data: [c.risk_distribution.Low, c.risk_distribution.Moderate, c.risk_distribution.High], backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderWidth: 0 }]
-            },
-            options: { cutout: '75%', plugins: { legend: { position: 'bottom', labels: {color:'#fff'} } } }
-        });
     } catch(e) { console.error("Binding Error:", e); }
 }
 
@@ -408,23 +566,6 @@ function renderDailyLog(content) {
             
             <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 space-y-10 shadow-2xl">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                        <div class="flex justify-between items-center mb-3">
-                            <label class="text-sm font-semibold text-white">Age (Years)</label>
-                            <span class="text-sm font-bold text-gray-300 font-mono" id="age-display">${formData.age}</span>
-                        </div>
-                        <input type="range" id="input-age" min="18" max="80" value="${formData.age}" class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer">
-                    </div>
-                    <div>
-                        <div class="flex justify-between items-center mb-3">
-                            <label class="text-sm font-semibold text-white">Biological Gender</label>
-                        </div>
-                        <select id="input-gender" class="w-full bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
-                            <option value="Female" ${formData.gender === 'Female' ? 'selected' : ''}>Female</option>
-                            <option value="Male" ${formData.gender === 'Male' ? 'selected' : ''}>Male</option>
-                            <option value="Other" ${formData.gender === 'Other' ? 'selected' : ''}>Other / Prefer not to say</option>
-                        </select>
-                    </div>
                     <div>
                         <div class="flex justify-between items-center mb-3">
                             <label class="text-sm font-semibold text-white">Sleep Duration</label>
@@ -470,7 +611,7 @@ function renderDailyLog(content) {
                 </div>
 
                 <div class="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4 text-center">
-                    <p class="text-xs text-gray-400 tracking-wide font-mono">Behavioral Inference Inputs: Age, Gender, Sleep, Stress, Activity, Anxiety, Hydration, Cycle Context</p>
+                    <p class="text-xs text-gray-400 tracking-wide font-mono">Behavioral Inference Inputs: Sleep, Stress, Activity, Anxiety, Hydration, Cycle Context</p>
                 </div>
 
                 <div class="flex items-center gap-4 pt-6 border-t border-gray-800">
@@ -489,13 +630,6 @@ function renderDailyLog(content) {
         </div>
     `;
 
-    document.getElementById('input-age').addEventListener('input', e => { formData.age = parseInt(e.target.value); document.getElementById('age-display').textContent = e.target.value; });
-    document.getElementById('input-gender').addEventListener('change', e => { 
-        formData.gender = e.target.value; 
-        const cw = document.getElementById('cycle-wrapper');
-        if(formData.gender !== 'Female') { cw.classList.add('hidden'); formData.cycle_day = 0; }
-        else { cw.classList.remove('hidden'); }
-    });
     document.getElementById('input-sleep').addEventListener('input', e => { formData.sleep_duration = parseFloat(e.target.value); document.getElementById('sleep-display').textContent = e.target.value + ' h'; });
     document.getElementById('input-stress').addEventListener('input', e => { formData.stress_level = parseInt(e.target.value); document.getElementById('stress-display').textContent = e.target.value + ' / 10'; });
     document.getElementById('input-activity').addEventListener('input', e => { formData.physical_activity = parseInt(e.target.value); document.getElementById('activity-display').textContent = e.target.value + ' m'; });
@@ -511,16 +645,12 @@ async function runPrediction() {
     const predictBtn = document.getElementById('predict-btn');
     loading.classList.remove('hidden'); predictBtn.disabled = true;
 
-    let hormone = (formData.gender !== 'Female' || formData.cycle_day === 0) ? 0 : Math.sin(2 * Math.PI * formData.cycle_day / formData.base_cycle);
     const payload = { 
-        "Age": formData.age,
-        "Gender": formData.gender,
         "Sleep Duration": formData.sleep_duration, 
         "Stress Level": formData.stress_level, 
         "Physical Activity Level": formData.physical_activity, 
         "Cycle_Day": formData.cycle_day, 
         "Base_Cycle_Length": formData.base_cycle, 
-        "Hormone_Proxy": hormone,
         "anxiety_level": formData.anxiety_level,
         "water_intake": formData.water_intake
     };
@@ -532,7 +662,7 @@ async function runPrediction() {
         if (response.ok) {
             lastPrediction = await response.json();
             if(currentUser) currentUser = lastPrediction;
-            localStorage.setItem('luna_user', JSON.stringify(lastPrediction));
+            sessionStorage.setItem('luna_user', JSON.stringify(lastPrediction));
             setTimeout(() => navigateTo('dashboard'), 400);
         } else { alert("API Error. Ensure API is running."); }
     } catch (e) {
@@ -652,46 +782,110 @@ async function renderModelInsights(content) {
 // RESEARCH MODE
 // ============================================
 function renderResearchMode(content) {
-    if(!cohortRecords.length) { content.innerHTML = '<div class="text-center text-gray-500 mt-20">No Cohort Schema detected via API.</div>'; return; }
-    
-    // Grab first 5 for sample
-    const sample = cohortRecords.slice(0, 5);
+    const userCount = cohortRecords.length ? cohortRecords.length : 100;
     
     content.innerHTML = `
-        <div class="animate-fade-in pb-12">
-            <h3 class="text-2xl font-bold text-white mb-6">Research Repository</h3>
-            
-            <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 mb-8">
-                <h4 class="text-lg font-bold text-purple-400 mb-4">Database Topology</h4>
-                <p class="text-gray-400 leading-relaxed text-sm">
-                    Operating on ${cohortRecords.length} synchronized pseudo-patients generated via <code>src/inference/generate_cohort.py</code>. 
-                    Structure enforces mathematically grounded distributions avoiding null-random saturation.
+        <div class="animate-fade-in pb-12 max-w-5xl mx-auto">
+            <div class="mb-10 text-center">
+                <h3 class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent mb-4">Luna Aura: Academic Framework & Methodology</h3>
+                <p class="text-gray-400 text-lg max-w-3xl mx-auto leading-relaxed">
+                    This document explicitly details the mathematical, inferential, and infrastructural topology driving the Luna Aura platform.
                 </p>
-                <div class="mt-6 flex space-x-4 text-xs font-mono">
-                    <div class="bg-gray-800 px-3 py-1 rounded">Source: Synthetic</div>
-                    <div class="bg-gray-800 px-3 py-1 rounded">Seed: Fixed-42</div>
-                    <div class="bg-gray-800 px-3 py-1 rounded">Volume: 100</div>
-                </div>
             </div>
+            
+            <div class="space-y-8">
+                <!-- Data Strategy & Privacy -->
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 overflow-hidden relative shadow-lg">
+                    <div class="absolute -right-6 -top-6 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+                    <h4 class="text-xl font-bold text-white mb-4 flex items-center gap-3"><span class="text-indigo-400">01.</span> Data Infrastructure & SQL Schema</h4>
+                    <p class="text-gray-400 leading-relaxed text-sm mb-6">
+                        The platform operates defensively using localized SQLite mapping. Demographic arrays (Age, Gender) explicitly bound to the primary <code>users</code> table to prevent temporal degradation, while behavioral telemetry maps strictly to <code>user_history</code>. Active tracking covers <strong class="text-white">${userCount} synchronized profiles</strong>.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-gray-800/80 p-4 rounded-lg border border-gray-700">
+                            <div class="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-2">Table: users (Static Identity)</div>
+                            <ul class="text-sm font-mono text-gray-300 space-y-1">
+                                <li>id (int, Primary Key)</li>
+                                <li>username, password_hash (text)</li>
+                                <li>age (int), gender (text)</li>
+                                <li>height_cm, weight_kg (float)</li>
+                                <li>cycle_length, sleep_target (float)</li>
+                            </ul>
+                        </div>
+                        <div class="bg-gray-800/80 p-4 rounded-lg border border-gray-700">
+                            <div class="text-xs font-bold uppercase tracking-widest text-purple-400 mb-2">Table: user_history (Temporal)</div>
+                            <ul class="text-sm font-mono text-gray-300 space-y-1">
+                                <li>id (int, Primary Key)</li>
+                                <li>user_id (int, Foreign Key)</li>
+                                <li>date (datetime)</li>
+                                <li>sleep_duration, stress_level (float/int)</li>
+                                <li>activity, anxiety_level (int)</li>
+                                <li>wellness_score, predicted_risk (derived)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 overflow-x-auto">
-                <h4 class="text-sm font-bold text-white mb-4">Sample Matrix Slice (Top 5 items)</h4>
-                <table class="w-full text-left text-sm text-gray-400">
-                    <thead class="text-xs uppercase bg-gray-800 text-gray-300">
-                        <tr><th class="px-4 py-3">ID</th><th class="px-4 py-3">Risk Group</th><th class="px-4 py-3">Sleep</th><th class="px-4 py-3">Stress</th><th class="px-4 py-3">Target Risk</th></tr>
-                    </thead>
-                    <tbody>
-                        ${sample.map(r => `
-                            <tr class="border-b border-gray-800 hover:bg-gray-800/50">
-                                <td class="px-4 py-3 font-mono text-purple-400">${r.id}</td>
-                                <td class="px-4 py-3">${r.cohort_group}</td>
-                                <td class="px-4 py-3">${r.sleep_duration}</td>
-                                <td class="px-4 py-3">${r.stress_level}</td>
-                                <td class="px-4 py-3">${r.predicted_risk}%</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                <!-- Equations & Factor Modeling -->
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-lg">
+                    <h4 class="text-xl font-bold text-white mb-4 flex items-center gap-3"><span class="text-emerald-400">02.</span> Ground-Truth Weightages & Exact Formulas</h4>
+                    <p class="text-gray-400 leading-relaxed text-sm mb-6">
+                        Before passing vectors to the ML engine, the system utilizes an explicit foundational heuristic equation generating a baseline <code>Wellness Score [0-100]</code>. This ensures mathematical stability regardless of model latency.
+                    </p>
+                    
+                    <div class="bg-gray-800 rounded-xl p-5 mb-6 text-sm overflow-x-auto text-gray-300 border border-gray-700">
+                        <span class="block text-emerald-400 font-bold mb-2">Final Weighting Framework:</span>
+                        <code>Wellness = (Sleep 25%) + (Stress 20%) + (Activity 15%) + (Anxiety 15%) + (Water 5%) + (Age Context 5%) + (Cycle Context 10%) + (Stability Adjustment 5%)</code>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 opacity-90">
+                        <div>
+                            <h5 class="text-sm font-bold text-gray-300 mb-2">Core Penalty Deductions:</h5>
+                            <ul class="text-sm text-gray-400 space-y-2 list-disc list-inside">
+                                <li><strong>Sleep Context:</strong> (7 - hours) × 5 points deducted if hours &lt; 7. Optimal bounds: 7-9 hours.</li>
+                                <li><strong>Stress Penalty:</strong> (level - 2) × 6 deducted if level &gt; 2.</li>
+                                <li><strong>Activity Deficit:</strong> (30 - activity_mins) × 0.5 deducted if mins &lt; 30.</li>
+                                <li><strong>Anxiety Penalty:</strong> higher anxiety dynamically limits upper bound wellness tracking.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h5 class="text-sm font-bold text-gray-300 mb-2">Phase Mapping (Non-Diagnostic):</h5>
+                            <ul class="text-sm text-gray-400 space-y-2 list-disc list-inside">
+                                <li><strong>Hormonal Context Proxy:</strong> Derived mathematically via <code class="bg-gray-800 px-1 py-0.5 rounded text-xs">sin(current_day / base_length * 2pi)</code></li>
+                                <li><strong>Cycle Sensitivity:</strong> Modulates final score softly (±2 points). It serves as context, not a deterministic outcome generator.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Machine Learning -->
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-lg">
+                    <h4 class="text-xl font-bold text-white mb-4 flex items-center gap-3"><span class="text-blue-400">03.</span> Machine Learning Pipeline (Random Forest)</h4>
+                    <p class="text-gray-400 leading-relaxed text-sm mb-4">
+                        A proprietary ensemble <code>RandomForestRegressor</code> is trained dynamically bridging the gap between localized physiological signals and broader cohort variance.
+                    </p>
+                    <ul class="text-sm text-gray-400 space-y-3 list-disc list-inside mb-6 bg-gray-800/50 p-6 rounded-lg border border-gray-700/50">
+                        <li><strong>Inference Generation:</strong> Transforms discrete (Stress Level: 5) inputs into a probabilistic <code>Risk Probability Estimate</code>.</li>
+                        <li><strong>Feature Representation:</strong> The model maps inputs like [Age, Factor(Gender), Sleep, Stress, HormoneProxy] through dense trees to isolate non-linear thresholds (e.g. at what sleep deficit does stress compound exponentially?).</li>
+                        <li><strong>Visualizations:</strong> The <em>30-Day Projective Trend</em> charts and <em>Heatmaps</em> process exact array extractions pushed gracefully via Chart.js canvas elements. Missing indices default into sequence constraints blocking visualization rendering until baseline lengths are hit.</li>
+                    </ul>
+                </div>
+
+                <!-- Assumptions and Ethics -->
+                <div class="bg-gray-900 border border-l-4 border-l-yellow-500 border-gray-800 rounded-2xl p-8 shadow-2xl relative">
+                    <h4 class="text-xl font-bold text-white mb-4">Limitations, Disclaimers & Assumptions</h4>
+                    <div class="text-sm text-gray-400 space-y-4">
+                        <p>
+                            <strong class="text-yellow-400">Estimation, Not Diagnosis:</strong> Luna Aura estimates Behavioral Wellness based exclusively on explicitly reported lifestyle variables. The AI output acts strictly as a "Behavioral Wellness Estimate" or "Risk Probability Estimate". It makes no claims to diagnose, prescribe, or clinically evaluate psychiatric conditions.
+                        </p>
+                        <p>
+                            <strong class="text-yellow-400">Age Context Non-Discrimination:</strong> Age modifications exist purely to smooth baseline mathematical variance parameters, preventing false-flag volatility mapping. It applies universally as non-discriminatory stabilization noise.
+                        </p>
+                        <p>
+                            <strong class="text-yellow-400">Cycle Dynamics Assumptions:</strong> Cycle variance maps to established biological rhythms, assuming a normal harmonic sequence. Actual patient biology may drastically differ; the model interprets timeline context as a general behavioral modifier layer, entirely constrained within a strict 10% maximum factor weight penalty limit.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -699,3 +893,83 @@ function renderResearchMode(content) {
 
 // Initial Boot Call Wait
 document.addEventListener('DOMContentLoaded', checkAuth);
+// ============================================
+// PROFILE SETTINGS
+// ============================================
+function renderProfileSettings(content) {
+    if (!currentUser || !currentUser.profile) {
+        content.innerHTML = `<div class="text-center text-red-500 mt-20 font-bold">Unauthenticated.</div>`;
+        return;
+    }
+    const p = currentUser.profile;
+    content.innerHTML = `
+        <div class="max-w-3xl mx-auto animate-fade-in pb-12">
+            <div class="text-center mb-8">
+                <h3 class="text-3xl font-bold text-white tracking-tight">Static Profile Config</h3>
+                <p class="text-gray-400 mt-2">Adjusting these parameters radically shifts your behavioral projection baseline.</p>
+            </div>
+            
+            <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div><label class="block text-sm font-medium text-gray-300 mb-1">Age</label>
+                    <input type="number" id="set-age" class="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white" value="${p.age}"></div>
+                    
+                    <div><label class="block text-sm font-medium text-gray-300 mb-1">Gender</label>
+                    <select id="set-gender" class="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white">
+                        <option value="Female" ${p.gender === 'Female' ? 'selected':''}>Female</option>
+                        <option value="Male" ${p.gender === 'Male' ? 'selected':''}>Male</option>
+                        <option value="Other" ${p.gender === 'Other' ? 'selected':''}>Other</option>
+                    </select></div>
+                    
+                    <div><label class="block text-sm font-medium text-gray-300 mb-1">Height (cm)</label>
+                    <input type="number" id="set-height" class="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white" value="${p.height_cm}"></div>
+                    
+                    <div><label class="block text-sm font-medium text-gray-300 mb-1">Weight (kg)</label>
+                    <input type="number" id="set-weight" class="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white" value="${p.weight_kg}"></div>
+                    
+                    <div><label class="block text-sm font-medium text-gray-300 mb-1">Sleep Target (Hours)</label>
+                    <input type="number" step="0.5" id="set-sleep" class="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white" value="${p.sleep_target}"></div>
+                    
+                    <div><label class="block text-sm font-medium text-gray-300 mb-1">Cycle Length (Days)</label>
+                    <input type="number" id="set-cycle" class="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white" value="${p.cycle_length}"></div>
+                </div>
+                
+                <div id="set-msg" class="hidden text-green-400 text-sm text-center font-medium mt-6"></div>
+                <div class="mt-8 flex justify-end">
+                    <button id="save-profile-btn" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-8 rounded-lg shadow-lg transition">Save Baseline</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('save-profile-btn').addEventListener('click', async () => {
+        const payload = {
+            username: p.username,
+            age: document.getElementById('set-age').value,
+            gender: document.getElementById('set-gender').value,
+            height_cm: document.getElementById('set-height').value,
+            weight_kg: document.getElementById('set-weight').value,
+            sleep_target: document.getElementById('set-sleep').value,
+            cycle_length: document.getElementById('set-cycle').value
+        };
+        const msg = document.getElementById('set-msg');
+        msg.classList.add('hidden');
+        try {
+            const res = await fetch(`${API_BASE}/profile`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            if (res.ok) {
+                const refreshed = await res.json();
+                currentUser = refreshed;
+                lastPrediction = refreshed;
+                sessionStorage.setItem('luna_user', JSON.stringify(refreshed));
+                msg.innerText = "Profile updated securely.";
+                msg.classList.replace('text-red-400', 'text-green-400');
+                msg.classList.remove('hidden');
+                checkAuth(); // Updates the header
+            } else { throw new Error('API failure'); }
+        } catch(e) {
+            msg.innerText = "Error saving profile.";
+            msg.classList.replace('text-green-400', 'text-red-400');
+            msg.classList.remove('hidden');
+        }
+    });
+}

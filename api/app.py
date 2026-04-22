@@ -60,14 +60,32 @@ def build_user_payload(username, conn_override=None):
     cur = conn.cursor()
     cur.execute('''SELECT h.* FROM users u 
                    JOIN user_history h ON u.id = h.user_id 
-                   WHERE LOWER(u.name) = LOWER(?) 
+                   WHERE LOWER(u.username) = LOWER(?) 
                    ORDER BY h.date ASC''', (username,))
     records = cur.fetchall()
+    cur.execute('''SELECT username, age, gender, height_cm, weight_kg, cycle_length, sleep_target, cohort_group 
+                   FROM users WHERE LOWER(username) = LOWER(?)''', (username,))
+    profile = cur.fetchone()
+    
     if not conn_override:
         conn.close()
         
-    if not records: return None
+    if not profile: return None
     
+    if not records:
+        return {
+            "user": username,
+            "profile": profile,
+            "history": [],
+            "new_record": None,
+            "charts": {
+                "risk_heatmap": [0,0,0,0,0,0,0], "wellness_trend": [0], "stress_trend": [0], "sleep_trend": [0], "activity_trend": [0],
+                "risk_distribution": {"Low": 0, "Moderate": 0, "High": 0}, "phase_influence": {"Menstrual": 0, "Follicular": 0, "Ovulatory": 0, "Luteal": 0},
+                "factor_breakdown": {}
+            },
+            "summary": {"summary_sentence": "Awaiting initial daily baseline injection.", "what_changed_most": "Awaiting Signal", "wellness_score": 0, "latest_risk": "0%"}
+        }
+        
     last = records[-1]
     risk_distribution = {"Low": 0, "Moderate": 0, "High": 0}
     phase_impact = {"Menstrual": 0, "Follicular": 0, "Ovulatory": 0, "Luteal": 0}
@@ -121,6 +139,7 @@ def build_user_payload(username, conn_override=None):
     
     return {
         "user": username,
+        "profile": profile,
         "history": records,
         "new_record": last,
         "charts": charts,
@@ -132,6 +151,88 @@ def api_user_history(username):
     payload = build_user_payload(username)
     if not payload:
         return jsonify({"error": "User not found"}), 404
+    return jsonify(payload)
+
+@app.route("/signup", methods=["POST"])
+def api_signup():
+    data = request.json
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+    if not username or not password:
+        return jsonify({"error": "Username and password required"}), 400
+        
+    conn = get_db_connection()
+    cur = conn.cursor()
+    import datetime
+    now = datetime.datetime.now().isoformat()
+    try:
+        cur.execute('''
+            INSERT INTO users (username, password_hash, age, gender, height_cm, weight_kg, cycle_length, sleep_target, created_at, updated_at, cohort_group, source)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            username, password, # Using raw password as hash for prototype sim
+            int(data.get("age", 25)),
+            data.get("gender", "Female"),
+            float(data.get("height_cm", 165.0)),
+            float(data.get("weight_kg", 60.0)),
+            int(data.get("cycle_length", 28) if data.get("gender") == "Female" else 0),
+            float(data.get("sleep_target", 8.0)),
+            now, now, "Moderate", "organic_signup"
+        ))
+        conn.commit()
+    except Exception as e:
+        conn.close()
+        return jsonify({"error": "Username already exists"}), 409
+    conn.close()
+    
+    payload = build_user_payload(username)
+    return jsonify(payload)
+
+@app.route("/login", methods=["POST"])
+def api_login():
+    data = request.json
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT password_hash FROM users WHERE LOWER(username) = LOWER(?)", (username,))
+    row = cur.fetchone()
+    conn.close()
+    
+    if not row or row[0] != password:
+        return jsonify({"error": "Invalid credentials"}), 401
+        
+    payload = build_user_payload(username)
+    return jsonify(payload)
+
+@app.route("/profile", methods=["PUT"])
+def api_update_profile():
+    data = request.json
+    username = data.get("username", "").strip()
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    import datetime
+    now = datetime.datetime.now().isoformat()
+    
+    cur.execute('''
+        UPDATE users SET
+        age = ?, gender = ?, height_cm = ?, weight_kg = ?, cycle_length = ?, sleep_target = ?, updated_at = ?
+        WHERE LOWER(username) = LOWER(?)
+    ''', (
+        int(data.get("age", 25)),
+        data.get("gender", "Female"),
+        float(data.get("height_cm", 165.0)),
+        float(data.get("weight_kg", 60.0)),
+        int(data.get("cycle_length", 28)),
+        float(data.get("sleep_target", 8.0)),
+        now, username
+    ))
+    conn.commit()
+    conn.close()
+    
+    payload = build_user_payload(username)
     return jsonify(payload)
 
 @app.route("/analytics", methods=["GET"])
@@ -198,6 +299,24 @@ def predict():
         if not data:
             return jsonify({"error": "No JSON payload provided."}), 400
             
+        # 0. Retrieve Persistent Profile Defaults
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            name = data.get("username", "Guest")
+            cur.execute('SELECT id, age, gender FROM users WHERE username = ?', (name,))
+            u_row = cur.fetchone()
+            if u_row:
+                data["Age"] = u_row[1]
+                data["Gender"] = u_row[2]
+            else:
+                data["Age"] = 25
+                data["Gender"] = "Female"
+            conn.close()
+        except:
+            data["Age"] = 25
+            data["Gender"] = "Female"
+            
         # 1. Base Prediction
         prediction_output = predictor.predict(data)
         
@@ -248,13 +367,16 @@ def predict():
             
             name = data.get("username", "Guest")
             
-            cur.execute('''
-                INSERT OR IGNORE INTO users (name, age, cohort_group, source, created_at, gender)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (name, data.get("Age", 26), "Live Inferences", "ui_client", now, data.get("Gender", "Female")))
-            
-            cur.execute('SELECT id FROM users WHERE name = ?', (name,))
-            uid = cur.fetchone()[0]
+            cur.execute('SELECT id, age, gender FROM users WHERE username = ?', (name,))
+            u_row = cur.fetchone()
+            if not u_row:
+                cur.execute('''
+                    INSERT INTO users (username, password_hash, age, gender, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (name, f"{name.lower()}_dummy", data.get("Age", 25), data.get("Gender", "Female"), now, now))
+                uid = cur.lastrowid
+            else:
+                uid = u_row[0]
             
             cur.execute('''
                 INSERT INTO user_history (user_id, date, sleep_duration, stress_level, mood_score, cycle_day, phase, activity, wellness_score, predicted_risk, anxiety_level, water_liters)

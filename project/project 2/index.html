@@ -56,27 +56,73 @@
 </head>
 
 <body class="bg-gray-950 text-gray-100">
-    <div id="auth-container" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center px-4">
-        <div class="w-full max-w-md">
-            <div class="bg-gray-900 border border-gray-800 rounded-lg p-8 shadow-2xl">
-                <div class="text-center mb-8">
-                    <div class="text-4xl mb-3" aria-hidden="true">🌙</div>
-                    <h1 class="text-3xl font-bold text-white mb-2">Luna Aura</h1>
-                    <p class="text-sm text-gray-400">Behavioral Analytics Platform</p>
+    <!-- Landing Splash Container -->
+    <div id="landing-container" style="display: none;" class="fixed inset-0 z-50 bg-gray-950 flex flex-col md:flex-row overflow-y-auto">
+        
+        <!-- Left Side: Copy & Info -->
+        <div class="flex-1 p-8 md:p-16 flex flex-col justify-center">
+            <div class="text-4xl mb-4" aria-hidden="true">🌙</div>
+            <h1 class="text-5xl font-bold text-white mb-6">Luna Aura</h1>
+            <p class="text-xl text-gray-400 mb-8 max-w-2xl leading-relaxed">
+                A cycle-aware behavioral analytics platform estimating stress, sleep trajectory, and cognitive variance through localized physiological signals. We prioritize clinical privacy over cloud telemetry.
+            </p>
+            
+            <div class="space-y-6 mb-12">
+                <div class="flex items-start gap-4">
+                    <div class="bg-purple-900/40 text-purple-400 p-3 rounded-lg border border-purple-500/30">📊</div>
+                    <div><h3 class="text-lg font-semibold text-white">Daily Signal Injection</h3><p class="text-sm text-gray-400">Log activity, stress, and physiological conditions locally.</p></div>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="bg-indigo-900/40 text-indigo-400 p-3 rounded-lg border border-indigo-500/30">🧠</div>
+                    <div><h3 class="text-lg font-semibold text-white">Rolling Random Forest</h3><p class="text-sm text-gray-400">Generates a live 30-day behavioral trend estimation trajectory.</p></div>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="bg-emerald-900/40 text-emerald-400 p-3 rounded-lg border border-emerald-500/30">🔒</div>
+                    <div><h3 class="text-lg font-semibold text-white">Absolute Transparency</h3><p class="text-sm text-gray-400">Strictly localized profiles. Age & Gender never revert automatically.</p></div>
+                </div>
+            </div>
+            
+            <button type="button" id="demo-btn" class="w-fit border border-gray-700 hover:border-gray-500 text-gray-300 px-8 py-3 rounded transition font-medium">Explore Demo / Aggregated Analytics</button>
+        </div>
+
+        <!-- Right Side: Auth Form -->
+        <div class="w-full md:w-[480px] bg-gray-900 border-l border-gray-800 p-8 md:p-12 flex flex-col justify-center shadow-2xl relative">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-white tracking-tight" id="auth-title">Welcome Back</h2>
+                <p class="text-sm text-gray-400 relative top-1">Access your persistent timeline.</p>
+            </div>
+            
+            <form id="auth-form" class="space-y-4" novalidate>
+                <div id="auth-core-fields">
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Username</label>
+                    <input type="text" id="auth-username" class="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white mb-3" placeholder="e.g. Eshita" required>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Password</label>
+                    <input type="password" id="auth-password" class="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white" placeholder="••••••••" required>
                 </div>
 
-                <form id="auth-form" class="space-y-4" novalidate>
-                    <div>
-                        <label for="auth-username" class="block text-sm font-medium text-gray-300 mb-2">Username</label>
-                        <input type="text" id="auth-username" class="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition" placeholder="e.g. Eshita" required aria-label="Username">
+                <div id="auth-signup-fields" class="hidden space-y-3 pt-4 border-t border-gray-800">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="block text-xs text-gray-400 mb-1">Age</label><input type="number" id="auth-age" class="w-full bg-gray-800 rounded px-3 py-1.5 text-white text-sm" value="25"></div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Gender</label>
+                            <select id="auth-gender" class="w-full bg-gray-800 rounded px-3 py-1.5 text-white text-sm">
+                                <option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div><label class="block text-xs text-gray-400 mb-1">Height (cm)</label><input type="number" id="auth-height" class="w-full bg-gray-800 rounded px-3 py-1.5 text-white text-sm" value="165"></div>
+                        <div><label class="block text-xs text-gray-400 mb-1">Weight (kg)</label><input type="number" id="auth-weight" class="w-full bg-gray-800 rounded px-3 py-1.5 text-white text-sm" value="60"></div>
+                        <div id="cycle-param-box"><label class="block text-xs text-gray-400 mb-1">Cycle Len (Days)</label><input type="number" id="auth-cycle" class="w-full bg-gray-800 rounded px-3 py-1.5 text-white text-sm" value="28"></div>
+                        <div><label class="block text-xs text-gray-400 mb-1">Sleep Target (Hours)</label><input type="number" step="0.5" id="auth-sleep" class="w-full bg-gray-800 rounded px-3 py-1.5 text-white text-sm" value="8.0"></div>
                     </div>
-                    <div id="auth-error" class="hidden text-red-500 text-sm text-center">User not found.</div>
-                    <div class="flex gap-3 pt-2">
-                        <button type="button" id="auth-login-btn" class="flex-1 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-medium py-2 rounded transition focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 focus:ring-offset-gray-900" aria-label="Log in to your account">Login</button>
-                        <button type="button" id="auth-signup-btn" class="flex-1 bg-gray-800 hover:bg-gray-700 active:bg-gray-600 text-white font-medium py-2 rounded transition focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900" aria-label="Create a new account">Sign Up</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+
+                <div id="auth-error" class="hidden text-red-500 text-sm font-medium"></div>
+
+                <div class="flex flex-col gap-3 pt-2">
+                    <button type="button" id="auth-login-btn" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-medium py-3 rounded transition shadow-lg">Login</button>
+                    <button type="button" id="auth-toggle-signup-btn" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium py-3 rounded transition border border-gray-700">Create an Account</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -95,6 +141,8 @@
                 <button class="nav-btn w-full text-left px-4 py-2 rounded transition text-gray-300 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-inset" data-page="analytics">Analytics</button>
                 <button class="nav-btn w-full text-left px-4 py-2 rounded transition text-gray-300 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-inset" data-page="model-insights">Model Insights</button>
                 <button class="nav-btn w-full text-left px-4 py-2 rounded transition text-gray-300 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-inset" data-page="research-mode">Research Mode</button>
+                <div class="my-4 border-t border-gray-800"></div>
+                <button class="nav-btn w-full text-left px-4 py-2 rounded transition text-gray-300 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-inset" id="nav-settings-btn" data-page="profile-settings" style="display:none">Profile Settings</button>
             </nav>
 
             <div class="p-4 border-t border-gray-800">
@@ -105,8 +153,8 @@
         <main class="flex-1 flex flex-col overflow-hidden" role="main">
             <header class="bg-gray-900 border-b border-gray-800 px-8 py-6 flex-shrink-0 flex justify-between items-start">
                 <div>
-                    <h2 class="text-2xl font-bold text-white mb-2">Luna Aura</h2>
-                    <p class="text-sm font-medium text-purple-400 mb-3">Cycle-Aware AI Mental Wellbeing Intelligence</p>
+                    <h2 class="text-2xl font-bold text-white mb-2" id="header-welcome-msg">Welcome to Luna Aura</h2>
+                    <p class="text-sm font-medium text-purple-400 mb-3" id="header-subtitle-msg">Cycle-Aware AI Mental Wellbeing Intelligence</p>
                 </div>
                 <div class="flex items-center gap-2 bg-gray-800 border border-gray-700 px-3 py-1.5 rounded-full shadow-inner">
                     <div id="server-dot" class="w-2.5 h-2.5 rounded-full bg-gray-500 transition-colors duration-500"></div>
