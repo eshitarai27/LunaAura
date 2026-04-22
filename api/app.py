@@ -93,8 +93,8 @@ def build_user_payload(username, conn_override=None):
     
     for r in records:
         pr = str(r.get("predicted_risk", "50")).replace("%", "")
-        if "Low" in pr or (pr.isdigit() and float(pr)<30): risk_distribution["Low"] += 1
-        elif "High" in pr or (pr.isdigit() and float(pr)>70): risk_distribution["High"] += 1
+        if "Low" in pr or (pr.isdigit() and float(pr) < 35): risk_distribution["Low"] += 1
+        elif "High" in pr or (pr.isdigit() and float(pr) >= 65): risk_distribution["High"] += 1
         else: risk_distribution["Moderate"] += 1
         
         ph = r.get("phase", "Follicular")
@@ -119,16 +119,41 @@ def build_user_payload(username, conn_override=None):
         "activity_trend": [r.get("activity", 30) for r in records],
         "risk_distribution": risk_distribution,
         "phase_influence": phase_impact,
-        "factor_breakdown": {
-            "Sleep": {"score": last.get("sleep_duration", 7), "impact": "+10"},
-            "Stress": {"score": last.get("stress_level", 5), "impact": "-10"},
-            "Activity": {"score": last.get("activity", 30), "impact": "+5"},
-            "Anxiety": {"score": last.get("anxiety_level", 5), "impact": "-5"},
-            "Water": {"score": last.get("water_liters", 2.0), "impact": "+2"},
-            "Cycle Context": {"score": last.get("phase", "Follicular"), "impact": "+0"},
-            "Trend Momentum": {"score": "Stable", "impact": "+5"}
-        }
     }
+    
+    # Dynamically Calculate Phase & Factors
+    cycle_day = int(last.get("cycle_day", 14))
+    gender = profile.get("gender", "Female")
+    if gender == "Female":
+        if cycle_day <= 5: phase_name, phase_val = "Menstrual", -5
+        elif cycle_day <= 13: phase_name, phase_val = "Follicular", 5
+        elif cycle_day <= 16: phase_name, phase_val = "Ovulatory", 8
+        else: phase_name, phase_val = "Luteal", -8
+    else:
+        phase_name, phase_val = "None", 0
+
+    s_dur = float(last.get("sleep_duration", 7))
+    st_lvl = float(last.get("stress_level", 5))
+    act_lvl = float(last.get("activity", 30))
+    anx_lvl = float(last.get("anxiety_level", 5))
+    wat_lvl = float(last.get("water_liters", 2.0))
+
+    sleep_imp = int((s_dur - 6.5) * 12)
+    stress_imp = int((4 - st_lvl) * 9)
+    act_imp = int((act_lvl - 20) * 0.5)
+    anx_imp = int((3 - anx_lvl) * 8)
+    wat_imp = int((wat_lvl - 1.5) * 4)
+
+    charts["factor_breakdown"] = {
+        "Sleep": {"score": s_dur, "impact": f"{sleep_imp:+d}"},
+        "Stress": {"score": st_lvl, "impact": f"{stress_imp:+d}"},
+        "Activity": {"score": act_lvl, "impact": f"{act_imp:+d}"},
+        "Anxiety": {"score": anx_lvl, "impact": f"{anx_imp:+d}"},
+        "Water": {"score": wat_lvl, "impact": f"{wat_imp:+d}"},
+        "Trend Momentum": {"score": "Stable", "impact": "+5"}
+    }
+    if gender == "Female":
+        charts["factor_breakdown"]["Cycle Context"] = {"score": phase_name, "impact": f"{phase_val:+d}"}
     
     summary = {
         "summary_sentence": f"Baseline stability tracking {len(records)} cycles.",
@@ -391,7 +416,7 @@ def predict():
                 "Live Input",
                 data.get("Physical Activity Level", 30),
                 sim_data["premium"]["wellness_score"],
-                "50%",
+                f"{int(prediction_output['referral_probability'] * 100)}%",
                 data.get("anxiety_level", 5),
                 data.get("water_intake", 2.0)
             ))

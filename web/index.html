@@ -110,7 +110,7 @@
                         <div><label class="block text-xs text-gray-400 mb-1">Age</label><input type="number" id="auth-age" class="w-full bg-gray-800 rounded px-3 py-1.5 text-white text-sm" value="25"></div>
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">Gender</label>
-                            <select id="auth-gender" class="w-full bg-gray-800 rounded px-3 py-1.5 text-white text-sm">
+                            <select id="auth-gender" class="w-full bg-gray-800 rounded px-3 py-1.5 text-white text-sm" onchange="document.getElementById('cycle-param-box').classList.toggle('hidden', this.value !== 'Female')">
                                 <option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other</option>
                             </select>
                         </div>

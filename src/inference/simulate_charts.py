@@ -50,9 +50,20 @@ def generate_chart_data(input_dict, prediction_output):
         sleep_proj.append(round(curr_s, 1))
         
     # 4. Risk Probability Estimate
-    high_risk = round(referral_prob * 100)
-    low_risk = round(max(0, 100 - high_risk) * 0.7)
-    mod_risk = 100 - high_risk - low_risk
+    risk_score = round(referral_prob * 100)
+    
+    if risk_score < 35:
+        low_risk = 100
+        mod_risk = 0
+        high_risk = 0
+    elif risk_score < 65:
+        low_risk = 0
+        mod_risk = 100
+        high_risk = 0
+    else:
+        low_risk = 0
+        mod_risk = 0
+        high_risk = 100
     
     # 5. Cycle Phase Influence
     curr_phase = get_cycle_phase(cycle_day) if gender == "Female" else "None"
@@ -87,16 +98,26 @@ def generate_chart_data(input_dict, prediction_output):
     n_stability = 75.0 if len(stress_trend) > 1 and stress_trend[-1] < stress_trend[0] else 50.0
     
     # 7. Apply Defensible Weighted Aggregation
-    w_sleep = n_sleep * 0.25
-    w_stress = n_stress * 0.20
-    w_act = n_activity * 0.15
-    w_anx = n_anxiety * 0.15
-    w_water = n_water * 0.05
-    w_age = n_age * 0.05
-    w_cycle = n_cycle * 0.10
-    w_stab = n_stability * 0.05
-    
-    wellness = int(w_sleep + w_stress + w_act + w_anx + w_water + w_age + w_cycle + w_stab)
+    if gender == "Female":
+        w_sleep = n_sleep * 0.25
+        w_stress = n_stress * 0.20
+        w_act = n_activity * 0.15
+        w_anx = n_anxiety * 0.15
+        w_water = n_water * 0.05
+        w_age = n_age * 0.05
+        w_cycle = n_cycle * 0.10
+        w_stab = n_stability * 0.05
+        wellness = int(w_sleep + w_stress + w_act + w_anx + w_water + w_age + w_cycle + w_stab)
+    else:
+        # Re-normalized weights for Male / Other to total 100% without cycle proxy
+        w_sleep = n_sleep * 0.30
+        w_stress = n_stress * 0.25
+        w_act = n_activity * 0.20
+        w_anx = n_anxiety * 0.15
+        w_water = n_water * 0.05
+        w_age = n_age * 0.05
+        w_stab = n_stability * 0.0
+        wellness = int(w_sleep + w_stress + w_act + w_anx + w_water + w_age)
     wellness = max(0, min(100, wellness))
     
     factor_breakdown = {
@@ -105,10 +126,11 @@ def generate_chart_data(input_dict, prediction_output):
         "Activity": {"score": int(n_activity), "impact": f"+{int(w_act)}"},
         "Anxiety": {"score": int(n_anxiety), "impact": f"+{int(w_anx)}"},
         "Hydration": {"score": int(n_water), "impact": f"+{int(w_water)}"},
-        "Age Context Adjustment": {"score": int(n_age), "impact": f"+{int(w_age)}"},
-        "Cycle Context Sensitivity": {"score": int(n_cycle), "impact": f"+{int(w_cycle)}"},
-        "Stability Adjustment": {"score": int(n_stability), "impact": f"+{int(w_stab)}"}
+        "Age Context Adjustment": {"score": int(n_age), "impact": f"+{int(w_age)}"}
     }
+    if gender == "Female":
+        factor_breakdown["Cycle Context Sensitivity"] = {"score": int(n_cycle), "impact": f"+{int(w_cycle)}"}
+        factor_breakdown["Stability Adjustment"] = {"score": int(n_stability), "impact": f"+{int(w_stab)}"}
     
     heatmap = [round(max(0.1, min(1.0, (st / 10.0) * (1.0 if sl < 6 else 0.5))), 2) for st, sl in zip(stress_trend, sleep_proj)]
     

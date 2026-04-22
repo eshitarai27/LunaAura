@@ -350,7 +350,7 @@ function renderDashboard(content) {
                     <div class="relative mx-auto" style="height:220px; width:220px;"><canvas id="chart-risk-dist"></canvas></div>
                     <p class="text-xs text-center text-gray-500 mt-4">Driven by: Distributed native regression outputs mapping severity bounds.</p>
                 </div>
-                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg">
+                <div id="phase-influence-container" class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg ${currentUser && currentUser.profile && currentUser.profile.gender !== 'Female' ? 'hidden' : ''}">
                     <h4 class="font-semibold text-white mb-4">Phase Influence</h4>
                     <div id="phase-bars" class="space-y-4 text-gray-500 text-sm italic">Awaiting rendering...</div>
                     <p class="text-xs text-gray-500 mt-6 pt-3 border-t border-gray-800">Driven by: current predicted impact based on generic menstrual cycle boundaries.</p>
@@ -465,12 +465,8 @@ function bindDashboardData(payload) {
             }
         }
         
-        if (L < 7) {
-            document.getElementById('insight-badge').innerText = "Establishing Baseline Array (1/7)";
-        }
-
-        if (L >= 7) {
-            document.getElementById('insight-badge').innerText = "Weekly Sequence Maturing (7/14)";
+        if (L >= 1) {
+            document.getElementById('insight-badge').innerText = "Automated Analytics Active";
             document.getElementById('dashboard-heatmap-block').classList.remove('hidden');
             const heatC = document.getElementById('heatmap-container');
             heatC.innerHTML = '';
@@ -486,27 +482,22 @@ function bindDashboardData(payload) {
                     setTimeout(() => div.style.opacity = 1, i * 100);
                 });
             }
-        }
-        
-        if(L >= 14) {
-            document.getElementById('insight-badge').innerText = "Rolling Analytics Active (14/30)";
+
             document.getElementById('dashboard-charts-block').classList.remove('hidden');
-            
             let traceMood = c.wellness_trend || c.mood_forecast || [0,0,0,0];
             let traceStress = c.stress_trend || [0,0,0,0];
             let traceSleep = c.sleep_trend || c.sleep_projection || [0,0,0,0];
             buildLineChart('chart-mood-forecast', traceMood, '#a855f7', 'Wellness Trend');
             buildLineChart('chart-stress-trend', traceStress, '#ef4444', 'Stress Trend');
             buildLineChart('chart-sleep-proj', traceSleep, '#3b82f6', 'Sleep Trend');
-        }
-        
-        if(L >= 30) {
-            document.getElementById('insight-badge').innerText = "Automated Insight";
+
             document.getElementById('dashboard-prob-block').classList.remove('hidden');
             
             const phaseBars = document.getElementById('phase-bars');
             phaseBars.innerHTML = '';
-            if(c.phase_influence) {
+            if (currentUser && currentUser.profile && currentUser.profile.gender !== 'Female') {
+                phaseBars.innerHTML = '<div class="text-center mt-8 text-gray-400 font-mono text-xs">Phase modeling disabled for non-female biology.<br>Telemetry defaults to neutral baseline.</div>';
+            } else if(c.phase_influence) {
                 Object.entries(c.phase_influence).forEach(([name, val]) => {
                 const color = val > 50 ? 'bg-purple-500' : 'bg-gray-700';
                 phaseBars.innerHTML += `
@@ -522,11 +513,15 @@ function bindDashboardData(payload) {
             
             const ctxRisk = document.getElementById('chart-risk-dist').getContext('2d');
             if(charts.risk) charts.risk.destroy();
+            
+            const liveRiskVal = parseInt(payload.summary.latest_risk.replace('%', '')) || 0;
+            const currentDist = { Low: liveRiskVal < 35 ? 100 : 0, Moderate: (liveRiskVal >= 35 && liveRiskVal < 65) ? 100 : 0, High: liveRiskVal >= 65 ? 100 : 0 };
+
             charts.risk = new Chart(ctxRisk, {
                 type: 'doughnut',
                 data: {
                     labels: ['Low', 'Moderate', 'High Risk'],
-                    datasets: [{ data: [c.risk_distribution.Low, c.risk_distribution.Moderate, c.risk_distribution.High], backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderWidth: 0 }]
+                    datasets: [{ data: [currentDist.Low, currentDist.Moderate, currentDist.High], backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderWidth: 0 }]
                 },
                 options: { cutout: '75%', plugins: { legend: { position: 'bottom', labels: {color:'#fff'} } } }
             });
@@ -968,7 +963,7 @@ function renderProfileSettings(content) {
                     <div><label class="block text-sm font-medium text-gray-300 mb-1">Sleep Target (Hours)</label>
                     <input type="number" step="0.5" id="set-sleep" class="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white" value="${p.sleep_target}"></div>
                     
-                    <div><label class="block text-sm font-medium text-gray-300 mb-1">Cycle Length (Days)</label>
+                    <div id="set-cycle-wrapper" class="${p.gender !== 'Female' ? 'hidden' : ''}"><label class="block text-sm font-medium text-gray-300 mb-1">Cycle Length (Days)</label>
                     <input type="number" id="set-cycle" class="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white" value="${p.cycle_length}"></div>
                 </div>
                 
@@ -979,6 +974,10 @@ function renderProfileSettings(content) {
             </div>
         </div>
     `;
+
+    document.getElementById('set-gender').addEventListener('change', (e) => {
+        document.getElementById('set-cycle-wrapper').classList.toggle('hidden', e.target.value !== 'Female');
+    });
 
     document.getElementById('save-profile-btn').addEventListener('click', async () => {
         const payload = {
