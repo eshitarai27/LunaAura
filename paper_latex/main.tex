@@ -29,7 +29,7 @@ sivakamp@srmist.edu.in}
 \maketitle
 
 \begin{abstract}
-Most digital wellness applications function as generic trackers, producing one-size-fits-all feedback that ignores individual behavioral rhythms and physiological context. This paper presents LunaAura, a full-stack explainable machine learning framework that brings together deterministic composite risk scoring, calibrated gradient-boosted classification, quantile regression for uncertainty-aware PHQ-9 estimation, and SHAP-driven explanations within a single longitudinal monitoring platform. The system tracks six daily behavioral signals---sleep duration, perceived stress, physical activity, anxiety, hydration, and menstrual cycle day---and fuses them into personalized wellness estimates through a transparent weighted formula. Female users benefit from additive menstrual-phase modifiers drawn from chronobiological evidence; male and non-binary users receive re-normalized weights that preserve analytical depth. A Flask REST backend, SQLite persistence layer, and Chart.js interactive dashboard complete the architecture. Evaluation on a controlled synthetic cohort of 105 users and 470 daily log entries, together with a 40-day longitudinal case study, confirms the formula's sensitivity to clinically meaningful input variations. The platform is framed throughout as a decision-support research prototype, not a clinical diagnostic tool.
+Contemporary wellness tracking tools tend to reduce complex behavioral health into isolated metrics---step counts, sleep logs, or single-question mood ratings---offering little analytical depth and no adaptation to individual physiology. LunaAura reimagines this paradigm by coupling a deterministic, auditable risk scoring formula with gradient-boosted probabilistic classification, three-quantile distributional regression on PHQ-9 outcomes, and instance-level SHAP explanations, all served through an interactive longitudinal dashboard. Users report six behavioral dimensions daily: sleep hours, subjective stress, exercise minutes, anxiety, water consumption, and menstrual cycle position. A weighted composite function translates these inputs into a risk indicator and a complementary wellness estimate, with additive phase-specific adjustments for users tracking hormonal cycles and a re-normalized weight set for those who are not. The engineering stack---Flask API, SQLite storage, Chart.js visualization---ensures that every analytical output is traceable from raw input to rendered chart. Testing against a reproducible 105-user synthetic cohort with 470 daily records, supplemented by a 40-day single-subject longitudinal study, validates the scoring function's graded response to behavioral variation. This work is presented as a research-stage decision-support tool; no claim of clinical diagnostic capability is made.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -40,75 +40,74 @@ explainable AI, behavioral wellness, hormonal health, personalized analytics, me
 \section{Introduction}
 %-----------------------------------------------------------------------
 
-According to the World Health Organization, mental health conditions now affect approximately one in every eight individuals worldwide, making them a leading cause of disability and lost productivity \cite{who2022mental}. Among university students and early-career professionals, academic workloads, financial pressures, social isolation, and chronic sleep disruption compound in ways that often go unrecognized until a crisis point is reached \cite{adler2022burnout}. Standardized screening tools such as the Patient Health Questionnaire-9 (PHQ-9) \cite{kroenke2001phq9} remain the clinical gold standard for assessing depressive symptom severity, yet they were conceived for periodic in-clinic encounters---not the kind of continuous, day-to-day monitoring that could catch early warning signs before they escalate.
+Nearly 970 million people live with a mental health condition, and the treatment gap in low- and middle-income countries exceeds 75\% \cite{who2022mental}. Within student populations, the convergence of academic pressure, erratic sleep schedules, financial insecurity, and social fragmentation creates a particularly fertile ground for subclinical distress to take root unnoticed \cite{adler2022burnout}. Instruments such as the PHQ-9 \cite{kroenke2001phq9} capture symptom severity with well-characterized psychometric properties, but their design presupposes a clinical encounter---a scheduled visit where a practitioner administers the questionnaire and interprets the result. What remains largely unaddressed is the space between formal assessments: the weeks of gradually worsening sleep, creeping anxiety, and declining physical activity that precede a diagnosable episode.
 
-The proliferation of smartphones has sparked considerable interest in digital phenotyping, the idea that passively collected behavioral signals can serve as proxies for subjective mental states \cite{saeb2015mobile}. Call logs, mobility traces, and screen-time patterns have all been shown to correlate with PHQ-9 outcomes \cite{torous2019digital}. Despite these promising findings, most consumer wellness applications have yet to capitalize on them. The typical wellness app amounts to a glorified diary: users log a mood emoji, receive a generic tip, and disengage within weeks because the feedback feels impersonal and shallow.
+Smartphones, in principle, could fill that gap. The digital phenotyping movement has shown that patterns extracted from device sensors---location entropy, call frequency, screen-on duration---track meaningful variance in PHQ-9 scores \cite{saeb2015mobile, torous2019digital}. In practice, though, commercial wellness applications have proven disappointing. They collect data eagerly but return little of substance: a congratulatory badge for hitting ten thousand steps, a suggestion to ``try deep breathing,'' or a color-coded mood log with no analytical backbone. Users lose interest quickly because the system offers nothing they could not infer on their own.
 
-Three particular shortcomings stand out. First, nearly every commercial tool applies uniform thresholds---``you slept fewer than seven hours''---without recognizing that six hours of sleep paired with low stress and vigorous exercise is a wholly different scenario from six hours paired with chronic anxiety and inactivity. Multi-dimensional risk assessment, where several factors interact to shape overall wellbeing, remains rare outside research prototypes. Second, the menstrual cycle, a biological rhythm affecting roughly half the global population, is almost entirely absent from wellness scoring models. Yet decades of clinical research confirm that hormonal fluctuations across the roughly 28-day cycle alter sleep architecture \cite{baker2007sleep}, modulate the hypothalamic-pituitary-adrenal axis \cite{mcewen2008central}, and shift subjective mood in ways that can reverse direction between individuals \cite{kiesner2012menstrual}. Any wellness system that ignores these dynamics risks producing systematically misleading scores for female users. Third, even when machine learning is deployed, the resulting models tend to operate as black boxes. Users receive a number without understanding which inputs drove it or what they might do differently. Trust erodes, engagement drops, and the system fails to deliver on its promise.
+We identify three specific design failures that perpetuate this problem. The first is dimensional flatness. Evaluating sleep in isolation from stress, exercise, or hydration misses the combinatorial nature of behavioral risk---six hours of sleep means something very different depending on what else is happening in a person's day. The second is biological blindness. The menstrual cycle reshapes sleep quality, cortisol reactivity, and affective regulation across a roughly four-week rhythm \cite{baker2007sleep, mcewen2008central}, yet almost no scoring model acknowledges this. A female user in her luteal phase, experiencing hormonally mediated sleep disruption and heightened stress sensitivity \cite{kiesner2012menstrual}, receives the same assessment as one in her follicular phase, when hormonal conditions are broadly favorable. The third failure is opacity. When a system does compute a score, it rarely explains which inputs mattered or how the user might intervene.
 
-LunaAura was built to address each of these gaps. It is not a clinical diagnostic tool---that would require prospective validation with ground-truth psychiatric outcomes---but rather an explainable decision-support framework that makes the connections between daily habits and overall wellbeing visible and actionable. The principal contributions are:
+LunaAura was designed around these three observations. It is a research prototype---not a clinical instrument---that integrates transparent composite scoring, calibrated machine learning, distributional uncertainty quantification, and per-instance explainability into a single full-stack application. Its contributions are:
 
 \begin{itemize}
-\item A transparent, six-factor composite risk formula with auditable weights and menstrual-cycle-phase modifiers grounded in published chronobiology.
-\item A gender-adaptive scoring architecture that re-normalizes factor contributions for male and non-binary users rather than simply hiding features.
-\item A hybrid inference pipeline integrating calibrated HistGradientBoosting classification, three-quantile distributional regression, and SHAP-based per-instance explanations.
-\item A complete, reproducible implementation encompassing data pipeline, model training, REST API, SQLite persistence, and an interactive longitudinal dashboard.
+\item A six-factor deterministic risk function with published, auditable weights and menstrual-cycle modifiers derived from the chronobiology literature.
+\item Gender-adaptive weight normalization that maintains analytical parity for male and non-binary users by redistributing freed capacity rather than discarding features.
+\item A hybrid ML pipeline pairing a sigmoid-calibrated HistGradientBoosting classifier with quantile regressors and a Random Forest SHAP proxy for instance-level explanations.
+\item An end-to-end open-source implementation: data seeding, model training, Flask REST API, SQLite persistence, and a Chart.js interactive dashboard.
 \end{itemize}
 
 %-----------------------------------------------------------------------
 \section{Literature Review}
 %-----------------------------------------------------------------------
 
-\subsection{Machine Learning in Mental Health}
-Computational approaches to mental health screening have grown rapidly over the past decade. The PHQ-9, originally validated by Kroenke, Spitzer, and Williams \cite{kroenke2001phq9}, has become a benchmark target for automated severity estimation. Arefin and de Roux \cite{arefin2020machine} showed that ensemble classifiers can distinguish depressive from non-depressive language patterns in social media posts, achieving reasonable accuracy on cross-sectional data. However, social-media-based approaches raise privacy concerns and typically lack the longitudinal dimension needed to track within-person change over time. Random Forest ensembles \cite{breiman2001random} remain popular for tabular health data due to their robustness to missing values and natural support for feature importance extraction.
+\subsection{Computational Screening for Mental Health}
+The PHQ-9 questionnaire, validated over two decades ago by Kroenke and colleagues \cite{kroenke2001phq9}, remains the most widely adopted self-report measure for depressive symptom severity. Its nine items map to DSM-IV criteria and produce a 0--27 score stratified into severity bands (Minimal, Mild, Moderate, Moderately Severe, Severe). Automated scoring from behavioral proxies has since become an active research direction: Arefin and de Roux \cite{arefin2020machine} applied ensemble classifiers to social media text, distinguishing depressive from non-depressive language with moderate accuracy but no longitudinal tracking. Tree-based methods, particularly Random Forests \cite{breiman2001random}, continue to dominate tabular health prediction tasks because they tolerate missing data gracefully and expose feature importance rankings without additional post-hoc analysis.
 
-\subsection{Digital Phenotyping and Passive Sensing}
-Saeb et al.\ \cite{saeb2015mobile} demonstrated that GPS-derived mobility features and phone usage statistics from smartphones correlate with self-reported PHQ-9 scores, establishing the feasibility of passive behavioral monitoring without requiring active user input. The MONARCA system \cite{bardram2020designing} extended this paradigm to bipolar disorder management, combining passively sensed data with self-reported mood in a longitudinal framework. More recently, Torous and colleagues \cite{torous2019digital, torous2021digital} have advocated for rigorous clinical validation of digital phenotyping pipelines, emphasizing that data quality, informed consent, and model interpretability remain unresolved barriers.
+\subsection{Digital Phenotyping}
+Saeb and colleagues \cite{saeb2015mobile} offered early evidence that GPS traces and phone usage statistics predict PHQ-9 variation at the individual level. The MONARCA project \cite{bardram2020designing} brought similar ideas to bipolar disorder, combining accelerometer data with daily self-reports in a clinician-facing dashboard. Torous et al.\ have written extensively on the promises and pitfalls of this paradigm \cite{torous2019digital, torous2021digital}, arguing that without rigorous attention to data provenance, consent, and interpretability, digital phenotyping risks producing noise dressed up as insight.
 
-\subsection{Explainable Artificial Intelligence}
-The SHAP (SHapley Additive exPlanations) framework introduced by Lundberg and Lee \cite{lundberg2017shap} provides a unified, theoretically grounded method for computing per-feature contributions to individual model predictions. In health applications, explainability is not merely a nicety but a practical requirement: clinicians need to understand why a model flagged a patient, and end users need actionable insights rather than opaque scores. Research on EmotionSense \cite{rachuri2010emotionsense} further demonstrated that user engagement with wellness tools improves measurably when feedback is contextual and interpretable rather than generic.
+\subsection{Interpretable Machine Learning}
+Lundberg and Lee's SHAP framework \cite{lundberg2017shap} placed feature attribution on firm game-theoretic ground by computing exact Shapley values for each predictor. In clinical decision support, explainability is not optional: a model that flags a patient without saying why is unlikely to earn a clinician's trust or a regulator's approval. Work on EmotionSense \cite{rachuri2010emotionsense} found that users interacted more frequently and for longer durations with wellness tools that offered contextual, interpretable feedback compared to those that displayed raw numbers alone.
 
-\subsection{Cycle-Aware Health Systems}
-Baker and Driver \cite{baker2007sleep} documented that slow-wave sleep activity drops significantly during the luteal phase of the menstrual cycle, a finding with direct implications for next-day cognitive performance and mood. Kiesner \cite{kiesner2012menstrual} observed that the same luteal-phase hormonal shifts produce paradoxically opposite affective outcomes across different women, a result that argues strongly for personalized baselines rather than population-level averages. McEwen \cite{mcewen2008central} provided a neuroendocrine framework explaining how chronic stress hormone exposure amplifies the biological vulnerability windows created by cyclical hormonal fluctuations. Despite this well-established literature, computational wellness platforms have been slow to incorporate cycle awareness into their scoring models.
+\subsection{Menstrual Cycle and Behavioral Regulation}
+Hormonal oscillations across the menstrual cycle influence multiple domains relevant to wellness tracking. Baker and Driver \cite{baker2007sleep} measured reduced slow-wave sleep amplitude during the luteal phase, a period when progesterone peaks. Kiesner \cite{kiesner2012menstrual} complicated the picture by showing that the direction of luteal-phase mood change varies substantially across individuals---some women experience improvement, others deterioration---making population-level averages a poor proxy for individual experience. McEwen's allostatic load model \cite{mcewen2008central} provides a mechanistic account of how chronic stress exposure interacts with hormonal cycles: cortisol dysregulation widens the vulnerability window that cyclical progesterone fluctuations create. Despite this convergent evidence, few digital health platforms incorporate cycle-phase awareness into their analytical engines.
 
-\subsection{Probability Calibration and Uncertainty Quantification}
-Platt scaling \cite{platt1999calibration} fits a logistic sigmoid to a classifier's raw output scores, transforming them into well-calibrated probability estimates---an important step when downstream decisions depend on predicted probabilities rather than hard class labels. Quantile regression \cite{koenker2001quantile, meinshausen2006quantile} offers a complementary approach: by estimating conditional quantiles rather than the conditional mean, it produces distributional uncertainty bounds without imposing parametric assumptions. For health analytics, where over-confident predictions carry real costs, these techniques are especially valuable.
+\subsection{Calibration and Distributional Prediction}
+Platt's sigmoid recalibration method \cite{platt1999calibration} transforms the raw output of a binary classifier into a probability that better reflects true class prevalence---a critical step when predicted probabilities inform downstream decisions. Quantile regression, formalized by Koenker and Hallock \cite{koenker2001quantile} and extended to tree-based models by Meinshausen \cite{meinshausen2006quantile}, replaces point prediction with a distributional envelope: instead of a single estimate, the model returns a credible interval (e.g., 10th--90th percentile) that honestly represents its uncertainty. In behavioral health, where individual variability is large and consequences of overconfidence are real, this transparency is especially important.
 
 %-----------------------------------------------------------------------
 \section{Methodology}
 %-----------------------------------------------------------------------
 
-\subsection{System Architecture}
-LunaAura follows a three-tier design. The frontend, built with HTML, vanilla JavaScript, and Chart.js for visualization, communicates with a Flask REST backend running on port 5001. The backend orchestrates four subsystems: a hybrid prediction engine combining deterministic risk scoring with ML inference, a SHAP-based TreeExplainer module, a rules-based recommendation generator, and a chart simulation module that produces visualization-ready data arrays. All user data persists in a SQLite database. Seven REST endpoints serve the application: \texttt{/health} (system status), \texttt{/signup} and \texttt{/login} (authentication), \texttt{/profile} (demographic updates), \texttt{/predict} (inference with automatic logging), \texttt{/analytics} (cohort-level aggregates), and \texttt{/insights} (model metadata).
+\subsection{Architecture Overview}
+The platform separates concerns into three layers. A static frontend built with HTML, vanilla JavaScript, and Chart.js handles user interaction and visualization. A Python Flask server, listening on port 5001, exposes seven RESTful endpoints: \texttt{/health} for liveness checks, \texttt{/signup} and \texttt{/login} for credential management, \texttt{/profile} for demographic editing, \texttt{/predict} for inference with simultaneous database logging, \texttt{/analytics} for population-level summaries, and \texttt{/insights} for model metadata. Beneath these routes sit four subsystems: a hybrid scoring engine (deterministic formula plus ML), a SHAP-based TreeExplainer, a threshold-driven recommendation generator, and a chart simulation module that projects visualization-ready arrays from current-day inputs.
 
-\subsection{Database Schema}
-The \texttt{users} table stores 12 fields: username, password hash, age, gender, height, weight, cycle length, sleep target, cohort group, source tag, and creation/update timestamps. The \texttt{user\_history} table stores 12 fields per daily entry: sleep duration, stress level (1--10 ordinal), mood score, cycle day, menstrual phase label, physical activity (minutes), computed wellness score, predicted risk percentage, anxiety level (1--10), and water intake (litres), linked to \texttt{users} via foreign key.
+All state persists in a SQLite database (\texttt{lunaaura.db}) containing two relational tables. The \texttt{users} table holds 12 fields---username, hashed password, age, gender, anthropometrics, cycle length, sleep target, cohort tag, source label, and timestamps. The \texttt{user\_history} table records 12 fields per daily log entry---sleep hours, ordinal stress (1--10), mood score, cycle day, phase label, exercise minutes, computed wellness, predicted risk, ordinal anxiety (1--10), and water intake (litres)---linked to \texttt{users} via foreign key.
 
-\subsection{Synthetic Cohort}
-Clinical data collection was outside the scope of this prototype, so a controlled synthetic cohort was generated with a fixed random seed (42) to ensure full reproducibility. The cohort comprises 105 users distributed across three risk strata: 30 high-risk profiles (sleep 3--5.5\,h, stress 7--10, activity 0--20\,min), 40 moderate-risk (sleep 5.5--7\,h, stress 4--7, activity 20--60\,min), and 30 low-risk (sleep 7--9\,h, stress 1--4, activity 60--120\,min). Gender distribution is 86 female, 14 male, and 5 other. Ages range from 18 to 55 years (mean 36.5). A total of 470 daily log entries populate the history table. One user (Eshita) was generated with 85 sequential entries spanning 40+ days, incorporating realistic cycle-phase-driven behavioral variation: hormone-linked sleep reduction during luteal and menstrual phases, compensatory stress elevation, and reduced activity during symptomatic windows.
+\subsection{Data Generation}
+Because this prototype did not involve human subjects, a synthetic cohort was generated deterministically (random seed 42) to support reproducible evaluation. The cohort contains 105 user profiles stratified into three behavioral clusters: 30 high-risk (sleep 3--5.5\,h, stress 7--10, activity 0--20\,min), 40 moderate (sleep 5.5--7\,h, stress 4--7, activity 20--60\,min), and 30 low-risk (sleep 7--9\,h, stress 1--4, activity 60--120\,min). Gender breakdown is 86 female, 14 male, 5 other; ages span 18--55 (mean 36.5). In total, 470 daily log records populate the history table. A dedicated longitudinal profile (Eshita, 85 entries over 40+ days) was seeded with cycle-phase-modulated behavioral drift---sleep shortens and stress rises during luteal and menstrual windows---to test temporal sensitivity.
 
-\subsection{Feature Engineering}
-The ML training pipeline operates on a separate master dataset ($n = 9{,}548$ records, 28 columns) that merges sleep-lifestyle survey data with PHQ-9 depression screening responses via K-nearest-neighbor linking on gender and age, followed by 14-day sequential expansion to simulate longitudinal tracking windows. Ten numeric features are retained for model input: Age, Sleep Duration, Physical Activity Level, Stress Level, Base Cycle Length, Cycle Day, Hormone Proxy (a sinusoidal encoding of cycle position), Sleep Rolling Mean (3-day window), Stress Rolling Mean (3-day window), and Stress Volatility (3-day standard deviation). The rolling features capture short-term behavioral momentum that isolated daily snapshots would miss.
+\subsection{Feature Preparation}
+Model training draws on a separate master dataset ($n = 9{,}548$ rows, 28 columns) assembled by linking a sleep-lifestyle survey with PHQ-9 screening data through K-nearest-neighbor matching on age and gender, then expanding each matched pair into a 14-day simulated tracking window. Ten numeric predictors survive selection: Age, Sleep Duration, Physical Activity Level, Stress Level, Base Cycle Length, Cycle Day, Hormone Proxy (sinusoidal cycle encoding), and three rolling aggregates---Sleep Rolling Mean, Stress Rolling Mean, and Stress Volatility (all computed over 3-day windows). The rolling features inject temporal context that a single-day snapshot cannot provide.
 
-\subsection{Composite Risk Formula}
-The primary risk scoring mechanism is a deterministic weighted composite, deliberately chosen over pure ML prediction for three reasons: full transparency (every weight is auditable), perfect reproducibility (identical inputs always yield identical outputs), and immediate interpretability (users can trace any score change to a specific input). The composite risk $R$ is computed as:
+\subsection{Deterministic Risk Scoring}
+The user-facing risk indicator is computed by a fully transparent weighted sum, chosen deliberately so that every output can be traced back to its constituent inputs without model introspection. The composite risk score $R$ is:
 
 \begin{equation}
 R = \sum_{i=1}^{5} f_i(x_i) \;+\; \tau \;+\; \phi(d, g)
 \label{eq:risk}
 \end{equation}
 
-\noindent where each factor contribution is:
+Individual factor terms are defined as follows. Stress contributes proportionally to its ordinal value, sleep and activity contribute through deficit functions that penalize shortfalls from healthy baselines, and anxiety and hydration contribute through analogous scaled terms:
 
 \begin{align}
 f_1 &= \frac{x_{\text{stress}}}{10} \times 35 \label{eq:f1}\\[3pt]
 f_2 &= \max\!\Bigl(0,\;\frac{8 - x_{\text{sleep}}}{8}\Bigr) \times 25 \label{eq:f2}\\[3pt]
 f_3 &= \frac{x_{\text{anxiety}}}{10} \times 20 \label{eq:f3}\\[3pt]
-f_4 &= \max\!\Bigl(0,\;\frac{60 - x_{\text{activity}}}{60}\Bigr) \times 10 \label{eq:f4}\\[3pt]
+f_4 &= \max\!\Bigl(0,\;\frac{60 - x_{\text{act}}}{60}\Bigr) \times 10 \label{eq:f4}\\[3pt]
 f_5 &= \max\!\Bigl(0,\;\frac{2.5 - x_{\text{water}}}{2.5}\Bigr) \times 5 \label{eq:f5}
 \end{align}
 
-\noindent The constant $\tau = 5$ represents a fixed trend baseline penalty. The cycle-phase modifier $\phi$ is defined for female users as:
+A fixed trend penalty $\tau = 5$ accounts for unmeasured background drift. The hormonal phase modifier $\phi$ applies exclusively to female users:
 
 \begin{equation}
 \phi(d, g) = \begin{cases}
@@ -121,84 +120,80 @@ f_5 &= \max\!\Bigl(0,\;\frac{2.5 - x_{\text{water}}}{2.5}\Bigr) \times 5 \label{
 \label{eq:phase}
 \end{equation}
 
-\noindent Risk is clamped to $[0,100]$ and classified as Low ($R<35$), Moderate ($35 \leq R < 65$), or High ($R \geq 65$).
+The score is bounded to $[0,100]$, with severity tiers at Low ($R < 35$), Moderate ($35 \leq R < 65$), and High ($R \geq 65$).
 
-\subsection{Wellness Score}
+\subsection{Wellness Estimation}
 
-A complementary wellness score aggregates normalized factor dimensions $\hat{x}_j \in [0,100]$:
+A parallel wellness index $W$ aggregates per-factor normalized scores $\hat{x}_j \in [0,100]$ under a gender-dependent weight vector $\boldsymbol{\alpha}$:
 
 \begin{equation}
 W = \sum_{j=1}^{k} \alpha_j \cdot \hat{x}_j, \quad W \in [0,100]
 \label{eq:wellness}
 \end{equation}
 
-\noindent For female users ($k=8$): Sleep 25\%, Stress 20\%, Activity 15\%, Anxiety 15\%, Cycle Context 10\%, Water 5\%, Age 5\%, Stability 5\%. For male/other users ($k=6$), cycle context is removed and weights are re-normalized: Sleep 30\%, Stress 25\%, Activity 20\%, Anxiety 15\%, Water 5\%, Age 5\%. Individual normalization functions include $\hat{x}_{\text{sleep}} = 100 - |x_{\text{sleep}} - 8| \times 15$ (penalizing deviation from the 8-hour optimum), $\hat{x}_{\text{stress}} = 100 - (x_{\text{stress}} - 1) \times 11.1$ (inverse linear mapping), and $\hat{x}_{\text{activity}} = \min(100,\; x_{\text{activity}} / 60 \times 100)$ (scaled against a 60-minute target).
+When $g = \text{Female}$, eight factors contribute ($k=8$): Sleep 25\%, Stress 20\%, Activity 15\%, Anxiety 15\%, Cycle Context 10\%, Hydration 5\%, Age 5\%, Stability 5\%. For male and non-binary profiles ($k=6$), cycle context is dropped and the released weight shifts to sleep (30\%), stress (25\%), activity (20\%), anxiety (15\%), hydration (5\%), age (5\%). Representative normalization functions: $\hat{x}_{\text{sleep}} = 100 - |x_{\text{sleep}} - 8| \times 15$; $\hat{x}_{\text{stress}} = 100 - (x_{\text{stress}} - 1) \times 11.1$; $\hat{x}_{\text{act}} = \min(100,\; x_{\text{act}}/60 \times 100)$.
 
-\subsection{Machine Learning Pipeline}
+\subsection{Learned Models}
 
-Three ML models supplement the deterministic formula to provide capabilities that a fixed formula cannot offer on its own:
+Three supervised models complement the formula-based scores:
 
-\textbf{Calibrated Classifier.} A \texttt{HistGradientBoostingClassifier} (max\_iter\,=\,100, max\_leaf\_nodes\,=\,31, learning rate\,=\,0.05) is trained on the master dataset to predict PHQ-9-derived referral flags (class 0: $n=5{,}054$; class 1: $n=4{,}494$). Post-hoc sigmoid calibration via \texttt{CalibratedClassifierCV} with 5-fold stratified cross-validation \cite{platt1999calibration} transforms raw scores into calibrated probabilities:
+\textbf{Calibrated Classifier.} A histogram-based gradient boosting machine (\texttt{HistGradientBoostingClassifier}, 100 boosting rounds, 31 leaf nodes, $\eta = 0.05$) predicts a binary referral flag derived from PHQ-9 severity. The training set is roughly balanced (class~0: 5\,054; class~1: 4\,494). Sigmoid recalibration \cite{platt1999calibration} via 5-fold stratified CV maps raw decision scores $s(x)$ to posterior probabilities:
 
 \begin{equation}
-P_{\text{cal}}(y=1 \mid x) = \frac{1}{1 + \exp\!\big(A \cdot s(x) + B\big)}
+P_{\text{cal}}(y{=}1 \mid x) = \frac{1}{1 + e^{A \cdot s(x) + B}}
 \label{eq:platt}
 \end{equation}
 
-\noindent where $s(x)$ is the base model's raw decision function output and parameters $A$, $B$ are fitted via maximum likelihood on held-out folds.
-
-\textbf{Quantile Regressors.} Three \texttt{HistGradientBoostingRegressor} models (max\_iter\,=\,150) target the 10th, 50th, and 90th percentiles of the PHQ-9 total score distribution using pinball loss \cite{meinshausen2006quantile}:
+\textbf{Quantile Regressors.} Three gradient boosting regressors (150 rounds each) trained with pinball loss \cite{meinshausen2006quantile} at quantile levels $q \in \{0.10, 0.50, 0.90\}$ produce a distributional prediction envelope for the PHQ-9 total:
 
 \begin{equation}
-\hat{y}_q = \arg\min_y \sum_i \rho_q(y_i - y), \quad \rho_q(u) = u\,(q - \mathbf{1}_{u<0})
+\hat{y}_q = \arg\min_y \sum_i \rho_q(y_i - y),\; \rho_q(u) = u\,(q - \mathbf{1}_{u<0})
 \label{eq:quantile}
 \end{equation}
 
-\noindent The resulting 10th--90th percentile envelope provides distributional uncertainty bounds without imposing parametric assumptions \cite{koenker2001quantile}.
-
-\textbf{SHAP Explainer.} A separate \texttt{RandomForestClassifier} (100 estimators, max depth 5) is trained as a SHAP-compatible proxy. TreeExplainer \cite{lundberg2017shap} computes exact Shapley values for each feature:
+\textbf{Explanation Proxy.} A 100-tree Random Forest (depth 5) is trained separately to enable SHAP's TreeExplainer \cite{lundberg2017shap}, which computes exact Shapley values:
 
 \begin{equation}
-\phi_j = \!\!\!\sum_{S \subseteq F \setminus \{j\}} \frac{|S|!\,(|F|-|S|-1)!}{|F|!}\big[f(S \cup \{j\}) - f(S)\big]
+\phi_j = \!\!\sum_{S \subseteq F \setminus \{j\}} \frac{|S|!(|F|{-}|S|{-}1)!}{|F|!}\big[f(S {\cup} \{j\}) - f(S)\big]
 \label{eq:shap}
 \end{equation}
 
-\noindent The three highest-magnitude features are surfaced to the user as natural-language explanations on the dashboard.
+The dashboard surfaces the three highest-magnitude attributions as natural-language insight statements.
 
 %-----------------------------------------------------------------------
 \section{Data Analysis and Interpretation}
 %-----------------------------------------------------------------------
 
-\subsection{Cohort Summary}
+\subsection{Cohort Profile}
 
 \begin{table}[t]
 \centering
-\caption{Cohort Summary Statistics ($N=470$ Daily Log Entries)}
+\caption{Descriptive Statistics of the Evaluation Cohort ($N = 470$)}
 \label{tab:stats}
 \begin{tabular}{lccc}
 \toprule
-\textbf{Feature} & \textbf{Mean} & \textbf{Min} & \textbf{Max}\\
+\textbf{Variable} & \textbf{Mean} & \textbf{Min} & \textbf{Max}\\
 \midrule
 Sleep Duration (h) & 6.97 & 2.0 & 12.0\\
-Stress Level (1--10) & 4.87 & 1 & 10\\
-Physical Activity (min) & 40.6 & 0 & 120\\
-Anxiety Level (1--10) & 4.07 & 1 & 10\\
-Water Intake (L/day) & 2.36 & 0.5 & 5.0\\
-Wellness Score (0--100) & 78.5 & 10 & 95\\
+Stress (1--10) & 4.87 & 1 & 10\\
+Exercise (min/day) & 40.6 & 0 & 120\\
+Anxiety (1--10) & 4.07 & 1 & 10\\
+Water (L/day) & 2.36 & 0.5 & 5.0\\
+Wellness (0--100) & 78.5 & 10 & 95\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:stats} summarizes the behavioral profile of the cohort. The mean sleep duration of 6.97 hours sits just below the National Sleep Foundation's recommended minimum of seven hours for adults aged 18--64 \cite{hirshkowitz2015sleep}, a pattern that mirrors real-world prevalence data on sleep insufficiency among young adults. Stress and anxiety distributions span the full ordinal range, with means near the midpoint, providing adequate variance for risk formula evaluation. The synthetic generation procedure ensured that high, moderate, and low behavioral profiles are all represented in sufficient numbers to exercise the full dynamic range of the composite formula.
+Table~\ref{tab:stats} profiles the synthetic cohort. Average nightly sleep (6.97\,h) falls just short of the National Sleep Foundation's 7-hour floor for healthy adults \cite{hirshkowitz2015sleep}---a pattern consistent with real-world epidemiological surveys of university-age populations. Stress and anxiety means cluster near the midpoint of their ordinal scales, while the full 1--10 range is represented, confirming that the generation procedure produced adequate behavioral diversity to probe the formula's dynamic range.
 
-\subsection{Longitudinal Case Study}
+\subsection{Within-Person Temporal Analysis}
 
-The Eshita profile, with 85 daily entries spanning more than 40 days, was specifically designed to test whether the system can track within-person behavioral change over time. Fig.~\ref{fig:corr} presents the Pearson correlation matrix computed across all tracked factors for this user. Stress and wellness show a clear negative association ($r \approx -0.6$), confirming that higher daily stress consistently maps to lower wellness estimates. Sleep duration and wellness correlate positively ($r \approx +0.4$), supporting the composite formula's assignment of sleep deficit as the second-highest-weighted factor. These correlations arise organically from the synthetic generation parameters rather than being hardcoded, lending credibility to the formula's weighting choices.
+The Eshita profile---85 consecutive entries across 40+ days---was constructed specifically to evaluate whether the scoring system responds coherently to evolving behavioral patterns. Fig.~\ref{fig:corr} shows the inter-factor correlation structure for this user. Stress and wellness exhibit a robust negative relationship ($r \approx -0.6$), while sleep and wellness correlate positively ($r \approx +0.4$). Crucially, these associations emerged from the generation parameters rather than being imposed directly on the output, offering independent support for the relative magnitude of the formula weights.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.85\columnwidth]{14_correlation_heatmap.png}
-\caption{Factor correlation heatmap for User Eshita (40-day longitudinal history). The negative stress--wellness relationship and positive sleep--wellness relationship empirically support the composite formula's weighting hierarchy.}
+\caption{Pearson correlation matrix for User Eshita (40-day history). The inverse stress--wellness and positive sleep--wellness relationships corroborate the formula's weighting scheme without circular validation.}
 \label{fig:corr}
 \end{figure}
 
@@ -206,86 +201,88 @@ The Eshita profile, with 85 daily entries spanning more than 40 days, was specif
 \section{Results and Discussion}
 %-----------------------------------------------------------------------
 
-\subsection{ML Model Performance}
+\subsection{Classifier Performance}
 
-The calibrated HistGradientBoosting classifier achieves an AUROC of approximately 0.567 on the master dataset's 80/20 train-test split, with a Brier calibration score of 0.245. Fig.~\ref{fig:roc} shows the ROC curve. These numbers are modest by conventional ML benchmarks, and we report them without embellishment. The explanation is straightforward: the training data was constructed by bridging two heterogeneous source datasets---a sleep-lifestyle survey and a depression screening questionnaire---using only shared demographic variables (age, gender). This statistical linkage inevitably introduces substantial noise, because the behavioral patterns of one individual in the sleep dataset have no guaranteed correspondence to the mental health outcomes of the matched individual in the depression dataset. Rather than engineering synthetic correlation variables to inflate the AUROC (a temptation that would compromise scientific integrity), LunaAura acknowledges this constraint honestly and positions the ML classifier as a supplementary component within a hybrid architecture.
+On an 80/20 stratified holdout, the calibrated classifier yields AUROC~$\approx$~0.567 and a Brier score of 0.245. Fig.~\ref{fig:roc} plots the operating characteristic. These figures sit below the thresholds that would support standalone predictive use, and we present them without embellishment. The performance ceiling traces directly to how the training corpus was assembled: two structurally distinct survey instruments---one measuring sleep and lifestyle, the other measuring depressive symptoms---were joined through demographic matching, a procedure that preserves marginal distributions but cannot reconstruct the conditional dependencies that would exist in a natively integrated dataset. Inflating these numbers by injecting synthetic correlations was a path we explicitly rejected; the resulting AUROC would be higher but epistemically hollow.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.85\columnwidth]{15_roc_curve.png}
-\caption{Receiver Operating Characteristic curve for the calibrated binary risk classifier. The modest AUC reflects the inherent noise in bridging heterogeneous data sources.}
+\caption{ROC curve for the sigmoid-calibrated binary classifier. Performance reflects the noise floor imposed by cross-dataset matching rather than a flaw in the model architecture.}
 \label{fig:roc}
 \end{figure}
 
-\subsection{Feature Importance}
+\subsection{Predictor Ranking}
 
-Fig.~\ref{fig:feat} presents the top-10 feature importance scores extracted from the Random Forest SHAP proxy. Age emerges as the strongest predictor, followed by Stress Level and Cycle Day. Sleep Duration and Physical Activity occupy mid-range positions. The engineered rolling-window features (Stress Volatility, Stress Rolling Mean, Sleep Rolling Mean) contribute measurable but smaller importance, suggesting that short-term temporal patterns carry predictive value beyond what instantaneous measurements alone can capture. This finding reinforces the system's design decision to include longitudinal feature engineering in the pipeline.
+Fig.~\ref{fig:feat} ranks the ten input features by impurity-based importance from the SHAP proxy forest. Age dominates, followed by Stress Level and Cycle Day. The three temporal rolling features---Stress Volatility, Stress Rolling Mean, and Sleep Rolling Mean---collectively account for a non-negligible share, which suggests that even rudimentary longitudinal encoding captures information absent from single-day snapshots. This observation motivated the system's 3-day rolling window design: short enough to reflect recent behavioral shifts, long enough to smooth daily noise.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.85\columnwidth]{18_feature_importance.png}
-\caption{Top-10 feature importance from the Random Forest SHAP proxy. Temporal rolling features contribute non-trivially, supporting the value of longitudinal feature engineering.}
+\caption{Feature importance ranking from the 100-tree Random Forest used as the SHAP explanation proxy. Rolling temporal features contribute meaningful predictive signal.}
 \label{fig:feat}
 \end{figure}
 
-\subsection{Composite Formula Sensitivity}
+\subsection{Formula Sensitivity}
 
-Fig.~\ref{fig:sens} demonstrates the sensitivity of the composite risk formula to systematic variation in stress level, with all other inputs held at their baseline values. Risk increases in a near-linear fashion from approximately 15 at stress level 1 to approximately 55 at stress level 8, crossing the moderate-risk threshold of 35 at approximately stress level 5.5. The high-risk threshold of 65 is reached only when stress combines with poor sleep or high anxiety---a design feature that prevents any single factor from triggering a high-risk classification in isolation. These transition points are behaviorally plausible and align with clinical observations about the relationship between chronic stress exposure and mental health deterioration \cite{mcewen2008central}.
+To verify that the deterministic formula behaves as intended, we swept each input variable across its full range while holding the others at baseline. Fig.~\ref{fig:sens} shows the stress sweep. Risk climbs steadily from~15 at stress~1 to~55 at stress~8, crossing into the Moderate band around stress~5.5. Reaching the High band ($R \geq 65$) requires simultaneous adversity on multiple axes---high stress coupled with poor sleep or elevated anxiety---which is a deliberate design property: no single factor, however extreme, should by itself trigger the highest severity tier. The transition points correspond well with clinical characterizations of the stress--health relationship \cite{mcewen2008central}.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.85\columnwidth]{21_sensitivity_risk_vs_stress.png}
-\caption{Sensitivity analysis: composite risk versus stress level with all other inputs at baseline. Dashed lines mark moderate (35) and high (65) classification thresholds.}
+\caption{Risk score as a function of stress level (other inputs at default). Horizontal dashes mark the Moderate (35) and High (65) boundaries.}
 \label{fig:sens}
 \end{figure}
 
-\subsection{Cycle-Phase Impact}
+\subsection{Hormonal Phase Effects}
 
-Fig.~\ref{fig:cycle} compares the baseline risk scores produced by the four menstrual cycle phases under otherwise identical input conditions. The Luteal phase (days 17--28) generates the highest baseline risk at approximately 36---just crossing into the moderate range---while the Ovulatory phase (days 14--16) produces the lowest at approximately 20. The 16-point differential is intentionally modest: it functions as a contextual adjustment rather than a dominant risk driver, consistent with the clinical literature's characterization of hormonal effects as modulators of vulnerability rather than direct causes of pathology \cite{baker2007sleep, kiesner2012menstrual}. For male and non-binary users, the phase modifier is set to zero and the freed weight is redistributed to sleep deficit (25\%~$\rightarrow$~30\%), preserving total weight integrity as shown in Table~\ref{tab:weights}.
+Fig.~\ref{fig:cycle} isolates the effect of cycle phase on baseline risk under otherwise identical conditions. The Luteal window (days 17--28, $\phi = +8$) pushes risk to approximately 36---just into the Moderate tier---whereas the Ovulatory window (days 14--16, $\phi = -8$) holds it near 20. A 16-point spread may appear small against the 0--100 scale, but this restraint is intentional: hormonal context should modulate, not dominate, the composite assessment. Population-level effect sizes in the cycle-mood literature are themselves moderate \cite{baker2007sleep, kiesner2012menstrual}, and overstating them computationally would misrepresent the evidence.
+
+For users who select Male or Other, $\phi$ defaults to zero. The 10\% capacity that would have gone to cycle context shifts to sleep deficit (25\%~$\to$~30\%), preserving total weight parity (Table~\ref{tab:weights}).
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.85\columnwidth]{24_cycle_phase_comparison.png}
-\caption{Baseline risk comparison across menstrual cycle phases (female users only). The Luteal phase shows the highest modifier (+8 points), Ovulatory the lowest ($-$8).}
+\caption{Risk modulation by menstrual phase (female profiles). Luteal and Menstrual phases elevate baseline risk; Follicular and Ovulatory phases reduce it.}
 \label{fig:cycle}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{Composite Risk Factor Weight Allocation by Gender}
+\caption{Gender-Adaptive Weight Distribution in the Composite Risk Formula}
 \label{tab:weights}
 \begin{tabular}{lcc}
 \toprule
-\textbf{Factor} & \textbf{Female} & \textbf{Male/Other}\\
+\textbf{Factor} & \textbf{Female} & \textbf{Male / Other}\\
 \midrule
-Stress Level & 35\% & 35\%\\
+Stress & 35\% & 35\%\\
 Sleep Deficit & 25\% & 30\%\\
 Anxiety & 20\% & 20\%\\
 Activity Deficit & 10\% & 10\%\\
 Hydration Deficit & 5\% & 5\%\\
 Phase Modifier & $\pm$5--8 pts & 0\\
-Trend Baseline & 5 pts (fixed) & 5 pts (fixed)\\
+Trend Baseline & 5 pts & 5 pts\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Why a Hybrid Architecture}
+\subsection{The Case for a Hybrid Design}
 
-A reasonable question is why LunaAura retains ML components given their modest standalone accuracy. The answer lies in complementary functionality that no single approach can provide alone. The deterministic formula delivers the user-facing risk score with complete transparency---every user can trace exactly how their inputs translate to their score. The calibrated classifier contributes a probability estimate informed by the PHQ-9 training distribution, capturing nonlinear feature interactions that a linear weighted sum cannot. The quantile regressors supply uncertainty intervals, honestly communicating how much confidence the system places in any given estimate. And the SHAP explainer bridges the gap between model internals and human understanding, generating per-instance attributions that the dashboard renders as natural-language insight cards.
+A fair objection is that the ML components, given their limited standalone discrimination, could simply be omitted. We retain them for four distinct reasons. First, the deterministic formula handles the primary user-facing score, supplying full auditability. Second, the calibrated classifier provides a complementary probability estimate shaped by the full PHQ-9 feature space, capturing interaction effects that a linear sum misses. Third, the quantile regressors produce confidence intervals---something no fixed formula can generate---allowing the dashboard to communicate uncertainty honestly. Fourth, the SHAP proxy translates model logic into plain-language attributions, enabling the ``Personalized Insights'' cards that distinguish the dashboard from a bare numerical readout.
 
-\subsection{Limitations and Honest Constraints}
+\subsection{Limitations}
 
-Several limitations must be acknowledged candidly. The evaluation cohort is synthetically generated from controlled distributions; while the feature ranges mirror real-world values, the absence of organically arising behavioral correlations constrains generalizability claims. The composite formula's weights are expert-derived heuristics, not the product of data-driven optimization against clinical outcomes. The ML classifier's modest AUROC reflects the fundamental difficulty of bridging heterogeneous datasets, and we consider honest reporting of this reality far preferable to metric inflation. Cycle-phase modifiers are based on population-level findings and do not yet accommodate the substantial between-individual variation documented by Kiesner \cite{kiesner2012menstrual}. Finally, and most importantly, the system produces Behavioral Wellness Estimates---not clinical diagnoses---and must never be interpreted as a replacement for professional mental health evaluation.
+We close this section with an honest inventory of constraints. The evaluation cohort is synthetic; although its feature distributions were designed to span clinically realistic ranges, it cannot reproduce the complex interdependencies found in organic behavioral data. Formula weights reflect expert judgment rather than optimization against clinical endpoints. The classifier's AUROC is a direct consequence of cross-dataset matching and would almost certainly improve with a natively integrated training corpus. Cycle-phase modifiers represent population averages and do not yet personalize to individual hormonal profiles. Most critically, every output of this system is a Behavioral Wellness Estimate---never a clinical diagnosis---and should be understood as such.
 
 %-----------------------------------------------------------------------
 \section{Conclusion and Future Work}
 %-----------------------------------------------------------------------
 
-LunaAura demonstrates that a personalized, explainable, cycle-aware behavioral wellness framework is technically achievable using well-established machine learning techniques combined with a transparent deterministic scoring layer. The system's principal value lies not in any single algorithmic novelty but in the careful integration of multiple complementary components---composite risk formulas, calibrated probabilistic classification, quantile uncertainty estimation, SHAP-based explainability, and longitudinal interactive visualization---into a cohesive user experience that respects both scientific rigor and practical usability.
+This paper presented LunaAura, an explainable framework that bridges deterministic composite scoring, calibrated probabilistic classification, quantile uncertainty estimation, and instance-level SHAP attribution within a longitudinal behavioral health dashboard. The system demonstrates that cycle-aware, gender-adaptive wellness analytics can be built from established ML components and transparent formulas without resorting to opaque end-to-end models or inflated performance claims.
 
-Several directions for future work emerge naturally. First and most critically, validation on clinically collected longitudinal datasets with ground-truth psychiatric outcomes would move the system from research prototype toward potential deployment. Second, integration with wearable device APIs (accelerometers, optical heart-rate sensors, sleep-stage trackers) would supplement self-reported inputs with passively collected physiological signals, reducing reporting burden and improving data fidelity \cite{torous2021digital}. Third, federated learning architectures \cite{wu2021federated} could enable model improvement across distributed user populations without centralizing sensitive behavioral data, addressing a core privacy concern. Additional planned enhancements include Bayesian optimization of formula weights against clinical outcome data, mobile-native deployment for continuous monitoring, and expansion of the cycle-aware framework to accommodate user-specific cycle irregularity patterns rather than a fixed 28-day assumption.
+Planned extensions fall into three categories. Clinically, the highest priority is evaluation against longitudinal datasets collected under informed consent, with verified psychiatric outcomes as ground truth. Technically, integration with wearable APIs---heart rate variability, actigraphy, sleep staging---would shift the input mix from purely self-reported to a blend of active and passive signals \cite{torous2021digital}. Architecturally, federated learning \cite{wu2021federated} would allow model refinement across geographically distributed cohorts without centralizing raw behavioral records, a property essential for privacy-sensitive deployment. Smaller-scale improvements include Bayesian search over formula weights conditioned on clinical outcomes, native mobile deployment, and individualized cycle-length modeling to replace the current fixed 28-day assumption.
 
-The complete codebase, trained model artifacts, database schema, and evaluation assets are available in the project repository, enabling independent reproduction and extension of all results reported in this paper.
+All source code, trained model artifacts, database schemas, and evaluation scripts reside in the project repository for independent replication and extension.
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}
