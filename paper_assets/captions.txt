@@ -1,0 +1,50 @@
+IEEE Figure Captions — LunaAura Research Paper
+================================================
+
+Fig. 1.  Age distribution of the LunaAura user cohort (N=105). The histogram illustrates participant diversity across age groups 18–55, reflecting a young-adult-skewed demographic typical of digital wellness platforms.
+
+Fig. 2.  Gender distribution across the registered cohort. Female participants constitute the majority, consistent with the platform's menstrual-cycle-aware design. Male and Other categories are included to validate gender-neutral behavioral scoring.
+
+Fig. 3.  Distribution of self-reported daily stress levels (1–10 ordinal scale) across all logged entries (N=470). The distribution indicates moderate central tendency with notable representation at both extremes.
+
+Fig. 4.  Sleep duration distribution across all daily logs. The dashed reference line at 7 hours marks the WHO-recommended minimum. A significant proportion of entries fall below this threshold, indicating prevalent sleep deficit patterns.
+
+Fig. 5.  Physical activity distribution (minutes per day) across the cohort. The right-skewed distribution suggests that most users log moderate activity levels, with fewer users achieving the recommended 60-minute daily target.
+
+Fig. 6.  Anxiety level distribution (1–10 ordinal scale) across all daily logs. The distribution demonstrates adequate variance for downstream risk modeling.
+
+Fig. 7.  Daily water intake distribution (litres) across all logged entries. Sub-optimal hydration (below 2.5L) is observed in a substantial portion of the cohort.
+
+Fig. 8.  Risk category distribution computed from the deterministic composite formula. Categories: Low (<35), Moderate (35–64), High (≥65). The class distribution validates adequate representation across severity tiers.
+
+Fig. 9.  Thirty-day longitudinal wellness score trend for User Eshita (user_id=101). Fluctuations correspond to variations in sleep quality, stress exposure, and cycle-phase transitions.
+
+Fig. 10. Thirty-day stress trajectory for User Eshita. Elevated stress periods correlate with observable drops in the wellness metric (Fig. 9).
+
+Fig. 11. Thirty-day sleep duration trend for User Eshita. The dashed line at 7 hours represents the personalized sleep target. Sustained sub-target sleep episodes precede elevated risk scores (Fig. 13).
+
+Fig. 12. Thirty-day physical activity trend for User Eshita. The baseline reference at 30 minutes highlights periods of activity deficit contributing to composite risk elevation.
+
+Fig. 13. Thirty-day risk indicator trend for User Eshita, computed via the deterministic 6-factor composite formula. Peaks correspond to concurrent high-stress and low-sleep episodes.
+
+Fig. 14. Pearson correlation heatmap of all tracked behavioral factors for User Eshita. Notable negative correlations between stress and wellness, and positive correlations between sleep and wellness, support the composite formula's weighting scheme.
+
+Fig. 15. Receiver Operating Characteristic (ROC) curve for the calibrated binary risk classifier. The area under the curve (AUC) quantifies the model's discriminative capacity between low-risk and elevated-risk profiles.
+
+Fig. 16. Precision-Recall curve for the binary risk classifier. PR-AUC provides a class-imbalance-aware evaluation complementing the ROC analysis.
+
+Fig. 17. Confusion matrix for the binary risk classifier evaluated on the cohort dataset. Rows indicate true labels; columns indicate predicted labels.
+
+Fig. 18. Top-10 feature importance scores extracted from the calibrated Random Forest classifier. Features are ranked by their mean decrease in impurity across all decision trees.
+
+Fig. 19. Predicted vs. actual risk score scatter plot. Each point represents a single daily log entry. The dashed diagonal represents perfect agreement; systematic deviations indicate areas for formula refinement.
+
+Fig. 20. Residual error histogram (predicted minus actual risk percentage). The distribution's proximity to zero indicates acceptable overall calibration, with minor systematic overestimation.
+
+Fig. 21. Sensitivity analysis: composite risk score as a function of stress level (all other inputs held at baseline). The chart validates monotonic risk increase with stress, crossing the moderate threshold at stress ≈ 5.5 and the high threshold at stress ≈ 9.
+
+Fig. 22. Sensitivity analysis: composite risk score as a function of sleep duration (decreasing). Risk increases sharply as sleep falls below 6 hours, validating the sleep-deficit weighting mechanism.
+
+Fig. 23. Sensitivity analysis: estimated wellness score as a function of physical activity. The positive relationship confirms the activity contribution to overall behavioral wellness.
+
+Fig. 24. Cycle-phase baseline risk comparison (Female users only). Luteal phase exhibits the highest baseline risk modifier (+8), while the Ovulatory phase is most protective (−8), consistent with literature on hormonal influences on stress reactivity.
