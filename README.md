@@ -25,7 +25,7 @@ sh run.sh
 2. Detects or creates a Python virtual environment (`venv`) and installs dependencies (`Flask`, `Pandas`, `Scikit-Learn`, `Chart.js`).
 3. Bootstraps the backend server locally on port `5001`.
 
-Once the server is running, simply open `project 2/index.html` in your favorite web browser!
+Once the server is running, simply open `web/index.html` in your favorite web browser!
 
 ## 🧪 Demo Mode & Demo Accounts
 
