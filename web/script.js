@@ -710,16 +710,21 @@ async function renderAnalytics(content) {
     content.innerHTML = `
         <div class="animate-fade-in pb-12">
             <h3 class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent mb-2">Population Analytics</h3>
-            <p class="text-gray-400 mb-8">Aggregating ${cd.total_population} pseudo-users across statistical baselines.</p>
+            <p class="text-gray-400 mb-2">Aggregating ${cd.total_population} pseudo-users across statistical baselines.</p>
+            <p class="text-xs text-gray-500 mb-8">This module provides cohort-level summaries computed from the <code class="text-purple-400">/analytics</code> API endpoint. All values are population averages across the full synthetic evaluation cohort (seed=42). These are not individual scores — they represent the distributional centre of the entire user base.</p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="bg-gray-900 border border-gray-800 shadow-xl rounded-2xl p-6 relative">
                     <h4 class="text-sm font-semibold text-gray-400">Mean Population Wellness</h4>
                     <div class="text-4xl font-bold text-white mt-2">${cd.avg_wellness} <span class="text-sm font-normal text-purple-500">/ 100</span></div>
+                    <div class="mt-3 flex items-center gap-2"><span class="text-xs text-gray-500">Poor</span><div class="flex-1 h-2 rounded-full" style="background: linear-gradient(to right, #ef4444, #eab308, #10b981);"></div><span class="text-xs text-gray-500">Excellent</span></div>
+                    <p class="text-xs text-gray-500 mt-2">Computed via W = Σαⱼ·x̂ⱼ. Score above <span class="text-emerald-400">70</span> indicates generally healthy behavioral patterns across the cohort.</p>
                 </div>
                 <div class="bg-gray-900 border border-gray-800 shadow-xl rounded-2xl p-6">
-                    <h4 class="text-sm font-semibold text-gray-400">Average Stress Vector</h4>
+                    <h4 class="text-sm font-semibold text-gray-400">Average Stress Level</h4>
                     <div class="text-4xl font-bold text-white mt-2">${cd.avg_stress} <span class="text-sm font-normal text-red-500">/ 10</span></div>
+                    <div class="mt-3 flex items-center gap-2"><span class="text-xs text-gray-500">Low</span><div class="flex-1 h-2 rounded-full" style="background: linear-gradient(to right, #10b981, #eab308, #ef4444);"></div><span class="text-xs text-gray-500">Severe</span></div>
+                    <p class="text-xs text-gray-500 mt-2">Ordinal scale 1–10. Values above <span class="text-yellow-400">5.5</span> correlate with Moderate risk tier. Carries <span class="text-white">35%</span> weight in the composite formula.</p>
                 </div>
             </div>
 
@@ -727,10 +732,12 @@ async function renderAnalytics(content) {
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
                     <h4 class="font-semibold text-white mb-4">Mood Trajectory (7-day Average)</h4>
                     <div style="height:250px;"><canvas id="chart-pop-mood"></canvas></div>
+                    <p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800"><span class="text-purple-400">↑ Rising trend</span> = cohort wellness improving. <span class="text-red-400">↓ Falling trend</span> = population-level stress accumulation. Flat lines suggest stable but potentially stagnant behavioral patterns.</p>
                 </div>
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
-                    <h4 class="font-semibold text-white mb-4">Stress Segmentation</h4>
+                    <h4 class="font-semibold text-white mb-4">Stress Distribution by Level</h4>
                     <div style="height:250px;"><canvas id="chart-pop-stress"></canvas></div>
+                    <p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Bar height = number of users at each stress level. A right-skewed distribution (taller bars at 7–10) would indicate a high-stress cohort. Ideal populations cluster at <span class="text-emerald-400">1–4</span>.</p>
                 </div>
             </div>
         </div>
@@ -763,21 +770,30 @@ async function renderModelInsights(content) {
         
         content.innerHTML = `
             <div class="animate-fade-in pb-12">
-                <h3 class="text-2xl font-bold text-white mb-4">Model Diagnostics</h3>
+                <h3 class="text-2xl font-bold text-white mb-2">Model Diagnostics</h3>
+                <p class="text-xs text-gray-500 mb-6">Live metrics from the trained ML pipeline. Data sourced from the <code class="text-purple-400">/insights</code> API endpoint. These reflect model performance on the 80/20 stratified holdout split of the 9,548-record training corpus.</p>
                 <div class="grid grid-cols-2 gap-6 mb-8">
                     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 border-l-4 border-l-green-500">
-                        <h4 class="text-sm text-gray-400">Classification AUC</h4>
+                        <h4 class="text-sm text-gray-400">Classification AUROC</h4>
                         <div class="text-3xl font-bold text-green-400 mt-2">${data.metrics.classification_auc}</div>
+                        <div class="mt-3 flex items-center gap-2"><span class="text-xs text-gray-500">Random (0.5)</span><div class="flex-1 h-2 rounded-full" style="background: linear-gradient(to right, #ef4444, #eab308, #10b981);"></div><span class="text-xs text-gray-500">Perfect (1.0)</span></div>
+                        <p class="text-xs text-gray-500 mt-2">Area Under the ROC Curve for the sigmoid-calibrated HistGradientBoosting classifier. Modest value reflects cross-dataset linkage noise, not model architecture deficiency. The deterministic formula remains the primary scoring mechanism.</p>
                     </div>
                     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 border-l-4 border-l-purple-500">
                         <h4 class="text-sm text-gray-400">Regression RMSE</h4>
                         <div class="text-3xl font-bold text-purple-400 mt-2">${data.metrics.regression_rmse}</div>
+                        <div class="mt-3 flex items-center gap-2"><span class="text-xs text-gray-500">Accurate (0)</span><div class="flex-1 h-2 rounded-full" style="background: linear-gradient(to right, #10b981, #eab308, #ef4444);"></div><span class="text-xs text-gray-500">Imprecise</span></div>
+                        <p class="text-xs text-gray-500 mt-2">Root Mean Square Error for the quantile median (q=0.50) PHQ-9 regressor. Lower is better. The three quantile models (q=0.10, 0.50, 0.90) together produce a distributional confidence envelope rather than a single point estimate.</p>
                     </div>
                 </div>
                 
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
                     <h4 class="font-semibold text-white mb-4">Relative Feature Importance</h4>
                     <div style="height:250px;"><canvas id="chart-importance"></canvas></div>
+                    <div class="mt-4 pt-3 border-t border-gray-800">
+                        <p class="text-xs text-gray-500">Impurity-based importance from the 100-tree Random Forest SHAP explanation proxy (max depth 5). Longer bars = higher predictive contribution. The top-3 features are surfaced as natural-language insight statements on the user dashboard.</p>
+                        <p class="text-xs text-gray-500 mt-1">Rolling temporal features (Stress Volatility, Stress Rolling Mean, Sleep Rolling Mean) capture 3-day behavioral momentum that single-day snapshots miss.</p>
+                    </div>
                 </div>
             </div>
         `;
@@ -806,10 +822,11 @@ function renderResearchMode(content) {
     content.innerHTML = `
         <div class="animate-fade-in pb-12 max-w-5xl mx-auto">
             <div class="mb-10 text-center">
-                <h3 class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent mb-4">Luna Aura: Academic Framework & Methodology</h3>
+                <h3 class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent mb-4">LunaAura: Research Framework & Methodology</h3>
                 <p class="text-gray-400 text-lg max-w-3xl mx-auto leading-relaxed">
-                    This document explicitly details the mathematical, inferential, and infrastructural topology driving the Luna Aura platform.
+                    Complete technical documentation of the mathematical formulations, ML pipeline architecture, database schema, and ethical constraints governing LunaAura.
                 </p>
+                <p class="text-xs text-gray-500 max-w-3xl mx-auto mt-2">This page serves as the in-platform equivalent of the published IEEE research paper. Every formula, weight, and threshold shown here is identical to the values implemented in the production codebase.</p>
             </div>
             
             <div class="space-y-8">
@@ -847,14 +864,21 @@ function renderResearchMode(content) {
 
                 <!-- Equations & Factor Modeling -->
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-lg">
-                    <h4 class="text-xl font-bold text-white mb-4 flex items-center gap-3"><span class="text-emerald-400">02.</span> Ground-Truth Weightages & Exact Formulas</h4>
+                    <h4 class="text-xl font-bold text-white mb-4 flex items-center gap-3"><span class="text-emerald-400">02.</span> Deterministic Scoring Formulas</h4>
                     <p class="text-gray-400 leading-relaxed text-sm mb-6">
-                        Before passing vectors to the ML engine, the system utilizes an explicit foundational heuristic equation generating a baseline <code>Wellness Score [0-100]</code>. This ensures mathematical stability regardless of model latency.
+                        The primary user-facing scores come from a fully transparent weighted formula — not from the ML models. This design ensures every output is auditable, reproducible, and traceable back to specific input values.
                     </p>
                     
+                    <div class="bg-gray-800 rounded-xl p-5 mb-4 text-sm overflow-x-auto text-gray-300 border border-gray-700">
+                        <span class="block text-red-400 font-bold mb-2">Risk Score R ∈ [0,100]:</span>
+                        <code>R = Stress(35%) + SleepDeficit(25%) + Anxiety(20%) + ActivityDeficit(10%) + Hydration(5%) + Baseline(5) + PhaseModifier(±5–8)</code>
+                        <div class="mt-2 flex items-center gap-2"><span class="text-xs text-gray-500">Low Risk</span><div class="flex-1 h-2 rounded-full" style="background: linear-gradient(to right, #10b981, #eab308, #ef4444);"></div><span class="text-xs text-gray-500">High Risk</span></div>
+                        <p class="text-xs text-gray-500 mt-1"><span class="text-emerald-400">Low: R&lt;35</span> · <span class="text-yellow-400">Moderate: 35≤R&lt;65</span> · <span class="text-red-400">High: R≥65</span></p>
+                    </div>
                     <div class="bg-gray-800 rounded-xl p-5 mb-6 text-sm overflow-x-auto text-gray-300 border border-gray-700">
-                        <span class="block text-emerald-400 font-bold mb-2">Final Weighting Framework:</span>
-                        <code>Wellness = (Sleep 25%) + (Stress 20%) + (Activity 15%) + (Anxiety 15%) + (Water 5%) + (Age Context 5%) + (Cycle Context 10%) + (Stability Adjustment 5%)</code>
+                        <span class="block text-emerald-400 font-bold mb-2">Wellness Score W ∈ [0,100] (Female):</span>
+                        <code>W = Sleep(25%) + Stress(20%) + Activity(15%) + Anxiety(15%) + Cycle(10%) + Water(5%) + Age(5%) + Stability(5%)</code>
+                        <p class="text-xs text-gray-500 mt-2">Male/Other: Cycle removed, Sleep→30%, Stress→25%, Activity→20%. Total always sums to 100%.</p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 opacity-90">
@@ -868,26 +892,42 @@ function renderResearchMode(content) {
                             </ul>
                         </div>
                         <div>
-                            <h5 class="text-sm font-bold text-gray-300 mb-2">Phase Mapping (Non-Diagnostic):</h5>
+                            <h5 class="text-sm font-bold text-gray-300 mb-2">Cycle Phase Modifiers (Female Only):</h5>
                             <ul class="text-sm text-gray-400 space-y-2 list-disc list-inside">
-                                <li><strong>Hormonal Context Proxy:</strong> Derived mathematically via <code class="bg-gray-800 px-1 py-0.5 rounded text-xs">sin(current_day / base_length * 2pi)</code></li>
-                                <li><strong>Cycle Sensitivity:</strong> Modulates final score softly (±2 points). It serves as context, not a deterministic outcome generator.</li>
+                                <li><span class="text-orange-400">Menstrual (Day 1–5): +5 pts</span> — elevated discomfort, sleep disruption</li>
+                                <li><span class="text-emerald-400">Follicular (Day 6–13): −5 pts</span> — hormonal recovery, improved mood</li>
+                                <li><span class="text-green-400">Ovulatory (Day 14–16): −8 pts</span> — peak estrogen, lowest risk window</li>
+                                <li><span class="text-red-400">Luteal (Day 17–28): +8 pts</span> — progesterone peak, sleep/mood disruption (Baker & Driver, 2007)</li>
                             </ul>
+                            <p class="text-xs text-gray-500 mt-2">For Male/Other users: φ=0. The 10% freed capacity shifts to Sleep Deficit (25%→30%).</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Machine Learning -->
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-lg">
-                    <h4 class="text-xl font-bold text-white mb-4 flex items-center gap-3"><span class="text-blue-400">03.</span> Machine Learning Pipeline (Random Forest)</h4>
+                    <h4 class="text-xl font-bold text-white mb-4 flex items-center gap-3"><span class="text-blue-400">03.</span> Machine Learning Pipeline</h4>
                     <p class="text-gray-400 leading-relaxed text-sm mb-4">
-                        A proprietary ensemble <code>RandomForestRegressor</code> is trained dynamically bridging the gap between localized physiological signals and broader cohort variance.
+                        Three supervised models complement the deterministic formula, each serving a distinct analytical purpose:
                     </p>
-                    <ul class="text-sm text-gray-400 space-y-3 list-disc list-inside mb-6 bg-gray-800/50 p-6 rounded-lg border border-gray-700/50">
-                        <li><strong>Inference Generation:</strong> Transforms discrete (Stress Level: 5) inputs into a probabilistic <code>Risk Probability Estimate</code>.</li>
-                        <li><strong>Feature Representation:</strong> The model maps inputs like [Age, Factor(Gender), Sleep, Stress, HormoneProxy] through dense trees to isolate non-linear thresholds (e.g. at what sleep deficit does stress compound exponentially?).</li>
-                        <li><strong>Visualizations:</strong> The <em>30-Day Projective Trend</em> charts and <em>Heatmaps</em> process exact array extractions pushed gracefully via Chart.js canvas elements. Missing indices default into sequence constraints blocking visualization rendering until baseline lengths are hit.</li>
-                    </ul>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-gray-800/50 p-5 rounded-lg border border-gray-700/50">
+                            <div class="text-xs font-bold uppercase tracking-widest text-green-400 mb-2">Calibrated Classifier</div>
+                            <p class="text-sm text-gray-400">HistGradientBoosting (100 rounds, 31 leaves, η=0.05) with Platt sigmoid calibration via 5-fold CV.</p>
+                            <p class="text-xs text-gray-500 mt-2">→ Outputs calibrated probability of PHQ-9 referral flag</p>
+                        </div>
+                        <div class="bg-gray-800/50 p-5 rounded-lg border border-gray-700/50">
+                            <div class="text-xs font-bold uppercase tracking-widest text-purple-400 mb-2">Quantile Regressors ×3</div>
+                            <p class="text-sm text-gray-400">HistGradientBoosting (150 rounds, pinball loss) at q = 0.10, 0.50, 0.90.</p>
+                            <p class="text-xs text-gray-500 mt-2">→ Outputs PHQ-9 confidence interval (10th–90th percentile)</p>
+                        </div>
+                        <div class="bg-gray-800/50 p-5 rounded-lg border border-gray-700/50">
+                            <div class="text-xs font-bold uppercase tracking-widest text-blue-400 mb-2">SHAP Explanation Proxy</div>
+                            <p class="text-sm text-gray-400">RandomForest (100 trees, depth 5) + TreeExplainer for exact Shapley values.</p>
+                            <p class="text-xs text-gray-500 mt-2">→ Outputs top-3 feature attributions as insight cards</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500">Training corpus: 9,548 records × 28 columns. Class balance: 5,054 (negative) / 4,494 (positive). 10 features survive selection: Age, Sleep Duration, Physical Activity, Stress, Cycle Length, Cycle Day, Hormone Proxy, Sleep Rolling Mean, Stress Rolling Mean, Stress Volatility.</p>
                 </div>
 
                 <!-- Assumptions and Ethics -->
