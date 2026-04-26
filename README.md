@@ -1,44 +1,103 @@
-# Luna Aura: Behavioral Risk Stratification Platform
+# LunaAura
 
-Luna Aura is a comprehensive predictive machine learning platform designed to model the intricate relationships between lifestyle metrics (sleep, stress, physical activity), menstrual cycle topologies, and behavioral wellness. 
+**An Explainable Machine Learning Framework for Hormonal and Emotional Health Analysis**
 
-Moving beyond generic off-the-shelf tracking, this project has evolved into a fully functional, mathematically defensible full-stack application featuring dynamic UI data maturity paths, persistent user accounts, and real-time inference charting.
+By Eshita Rai | Guide: Mrs. P. Sivakamasundari  
+Department of Computing Technologies, SRM Institute of Science and Technology, Chennai
 
-## 🚀 Key Features
+---
 
-- **Dynamic Visual Dashboard:** A beautiful, responsive interface that unlocks progressive analytics (7-day heatmaps, 14-day rolling averages, 30-day distributions) purely based on a user's data maturity.
-- **Robust Authentication & Privacy:** Secure, localized SQLite schema managing both persistent demographic anchors (Age, Gender) and temporal physiological telemetry. Session tracking natively intercepts unauthenticated requests.
-- **Machine Learning Inference:** A proprietary ensemble Random Forest architecture trained on a mathematically constrained 100-user pseudo-cohort. It isolates non-linear lifestyle thresholds to generate probabilistic Risk Estimates instead of deterministic diagnostic points.
-- **Academic Research Module:** A transparent, in-app documentation module detailing exact baseline equations, SQL topological logic, penalty deductions, and explicit ethical constraints guarding the model's behavioral assumptions.
-- **Persistent Backend:** Seamlessly integrates a Flask API gateway to manage real-time payload generation, connecting Chart.js frontend canvas rendering instantly with backend Python matrix operations.
+## What is LunaAura?
 
-## ⚙️ Running the Project
+LunaAura helps you understand how your daily habits affect your emotional wellbeing. You log six things daily — sleep, stress, anxiety, exercise, water intake, and menstrual cycle day — and the system calculates a personal risk score and wellness score using a transparent weighted formula. Machine learning models estimate your mental health trajectory and SHAP explains which factors matter most.
 
-Getting the platform up and running locally is handled by a single unified bootstrapper script.
+**This is a research prototype, not a medical tool.**
 
-```bash
-sh run.sh
+---
+
+## Project Structure
+
+```
+Luna_Aura/
+├── api/                    # Flask REST API (port 5001)
+│   └── app.py              # 7 endpoints: health, signup, login, profile, predict, analytics, insights
+├── web/                    # Frontend
+│   ├── index.html           # Main UI with login, dashboard, analytics, research mode
+│   └── script.js            # All rendering, chart logic, and API calls
+├── src/                    # Core ML & data pipeline
+│   ├── data_pipeline/       # Data loading, merging, preprocessing, SQLite management
+│   ├── models/              # Trained models (.pkl), training scripts, SHAP explainer
+│   └── inference/           # Cohort generation, chart simulation, prediction logic
+├── data/                   # SQLite database (105 users, 470 daily logs)
+│   ├── lunaaura.db          # Main database
+│   ├── raw/                 # Source CSV datasets
+│   └── processed/           # Merged training data
+├── docs/                   # Technical documentation
+├── paper_assets/           # Publication-ready charts and tables (25+ figures)
+├── presentation/           # Review 3 materials
+│   ├── LunaAura_Review3_Final.pptx  # 34-slide presentation
+│   ├── LunaAura_Research_Paper.pdf  # IEEE-format paper
+│   ├── Review3_Speaking_Notes.md    # Viva prep & speaking flow
+│   └── rubric/              # Evaluation rubric & IEEE template
+├── scripts/                # Utility scripts (PPT generation, data seeding, chart generation)
+├── archive/                # Legacy code and old versions
+├── requirements.txt        # Python dependencies
+└── run.sh                  # Quick-start script
 ```
 
-**What this does:**
-1. Cleans up abandoned background ports natively.
-2. Detects or creates a Python virtual environment (`venv`) and installs dependencies (`Flask`, `Pandas`, `Scikit-Learn`, `Chart.js`).
-3. Bootstraps the backend server locally on port `5001`.
+---
 
-Once the server is running, simply open `web/index.html` in your favorite web browser!
+## Quick Start
 
-## 🧪 Demo Mode & Demo Accounts
+```bash
+# Install dependencies
+pip install -r requirements.txt
 
-For instant exploration, the system initiates with a 100-user generated cohort tracking exactly 30 days of synthetic (yet mathematically constrained) physiological variance. 
+# Start the server
+python api/app.py
 
-You can log in and view highly saturated data arrays instantly using any of the generated identities:
-- **Username:** `Eshita` / **Password:** `eshita_dummy`
-- **Username:** `Aanya` / **Password:** `aanya_dummy`
-- **Username:** `Rohan` / **Password:** `rohan_dummy`
+# Open the frontend
+open web/index.html
+```
 
-Alternatively, you can skip login via "Explore Demo" to view population macro-telemetry securely abstracted from individual profiles.
+The API runs on `http://localhost:5001`. The frontend connects to it automatically.
 
-## 📖 Extended Documentation
+**Demo users:** `eshita / eshita123` (Female, 85 entries) | `rohan / rohan123` (Male)
 
-- Read **`docs/ARCHITECTURE.md`** for a deep dive into the ML ensemble structure, data structuring via k-NN loops, and explainability implementations.
-- Read **`docs/RUN_STEPS.md`** for further technical step-by-step diagnostic workflows.
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | HTML, JavaScript, Chart.js, TailwindCSS |
+| Backend | Python, Flask |
+| Database | SQLite |
+| ML Models | scikit-learn (HistGradientBoosting, RandomForest, Quantile Regression) |
+| Explainability | SHAP (TreeExplainer) |
+
+---
+
+## Key Features
+
+- **Transparent Risk Formula** — weighted sum of 6 factors (Stress 35%, Sleep 25%, Anxiety 20%, Activity 10%, Hydration 5%, Baseline 5%) + cycle phase modifiers
+- **Cycle-Aware Scoring** — menstrual phase modifiers (±5 to ±8 points) based on published chronobiology
+- **Gender-Adaptive** — male users get re-normalized weights, not reduced analytics
+- **Calibrated ML** — Platt-scaled classifier + 3 quantile regressors for uncertainty
+- **SHAP Explainability** — per-instance feature attributions shown as plain-language insights
+- **Longitudinal Dashboard** — 30-day trends, 7-day risk heatmap, real-time charts
+
+---
+
+## Database
+
+- **105 users** (86 Female, 14 Male, 5 Other)
+- **470 daily log entries**
+- **1 longitudinal user** (Eshita: 85 entries over 40+ days)
+- Reproducible synthetic cohort (seed=42)
+
+---
+
+## License
+
+Research project — SRM Institute of Science and Technology, 2026.
