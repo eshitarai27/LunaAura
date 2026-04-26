@@ -347,13 +347,13 @@ function renderDashboard(content) {
                         <span class="text-[10px] text-red-400">Critical</span>
                     </div>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">Each cell represents one day's composite risk probability. <span class="text-emerald-400">Green</span> = Low behavioral risk (R&lt;35). <span class="text-yellow-400">Yellow/Orange</span> = Moderate concern (35≤R&lt;65). <span class="text-red-400">Red</span> = Elevated multi-factor adversity (R≥65). Colors are driven by model risk probability combined with recent volatility variance.</p>
+                <p class="text-xs text-gray-500 mt-2">Each box is one day. <span class="text-emerald-400">Green</span> means you're doing well (score under 35). <span class="text-yellow-400">Yellow/Orange</span> means things need attention (score 35–64). <span class="text-red-400">Red</span> means multiple factors are off and your risk is high (65+). The colour comes from your daily risk score.</p>
             </div>
 
             <div id="dashboard-charts-block" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 hidden">
-                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Trend Projection</h4><div style="height:200px;"><canvas id="chart-mood-forecast"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: historic wellness scores. <span class="text-purple-400">↑ Upward</span> = improving behavioral patterns. <span class="text-red-400">↓ Downward</span> = declining wellness requiring attention.</p></div>
-                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Stress Trajectory</h4><div style="height:200px;"><canvas id="chart-stress-trend"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: physiological stress records. Scale 1–10 ordinal. Sustained readings above <span class="text-yellow-400">5.5</span> correlate with Moderate risk tier transition.</p></div>
-                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Sleep/Activity</h4><div style="height:200px;"><canvas id="chart-sleep-proj"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: recovery and physical activity vectors. Sleep below <span class="text-blue-400">7h</span> = deficit penalty. Activity below <span class="text-blue-400">60 min</span> = reduced wellness contribution.</p></div>
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Trend Projection</h4><div style="height:200px;"><canvas id="chart-mood-forecast"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Shows how your overall wellness has changed over the past month. <span class="text-purple-400">Line going up</span> = you're improving. <span class="text-red-400">Line going down</span> = something needs your attention.</p></div>
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Stress Trajectory</h4><div style="height:200px;"><canvas id="chart-stress-trend"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Your stress levels over 30 days (scale 1–10). If this stays above <span class="text-yellow-400">5.5</span> consistently, the system flags you as Moderate risk.</p></div>
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Sleep/Activity</h4><div style="height:200px;"><canvas id="chart-sleep-proj"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Tracks your sleep hours and exercise over time. Sleeping under <span class="text-blue-400">7 hours</span> adds a penalty to your score. Exercising less than <span class="text-blue-400">60 minutes</span> also lowers your wellness.</p></div>
             </div>
             
             <div id="dashboard-prob-block" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 hidden">
@@ -361,18 +361,18 @@ function renderDashboard(content) {
                     <h4 class="font-semibold text-white mb-4">Risk Indicator</h4>
                     <div class="relative mx-auto" style="height:220px; width:220px;"><canvas id="chart-risk-dist"></canvas></div>
                     <div class="flex justify-center gap-4 mt-3 text-[10px]">
-                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span class="text-gray-400">Low (R&lt;35) — Stable</span></span>
-                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span><span class="text-gray-400">Moderate (35–64)</span></span>
-                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="text-gray-400">High (≥65) — Alert</span></span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span class="text-gray-400">Low (under 35) — You're doing fine</span></span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span><span class="text-gray-400">Moderate (35–64) — Needs attention</span></span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="text-gray-400">High (65+) — Multiple factors are off</span></span>
                     </div>
-                    <p class="text-xs text-center text-gray-500 mt-2">Based on composite deterministic formula R = Σf(xᵢ) + τ + φ(d,g). Not a clinical diagnosis — behavioral wellness estimate only.</p>
+                    <p class="text-xs text-center text-gray-500 mt-2">Your risk score is calculated from your daily inputs using a weighted formula. This is a wellness estimate, not a medical diagnosis.</p>
                 </div>
                 <div id="phase-influence-container" class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg ${currentUser && currentUser.profile && currentUser.profile.gender !== 'Female' ? 'hidden' : ''}">
                     <h4 class="font-semibold text-white mb-4">Phase Influence</h4>
                     <div id="phase-bars" class="space-y-4 text-gray-500 text-sm italic">Awaiting rendering...</div>
                     <div class="mt-4 pt-3 border-t border-gray-800">
-                        <p class="text-xs text-gray-500">Phase modifier range: <span class="text-emerald-400">Ovulatory −8</span> · <span class="text-green-400">Follicular −5</span> · <span class="text-orange-400">Menstrual +5</span> · <span class="text-red-400">Luteal +8</span></p>
-                        <p class="text-xs text-gray-500 mt-1">Based on Baker & Driver (2007) and Kiesner (2012). Hormonal context modulates — does not dominate — the composite score.</p>
+                        <p class="text-xs text-gray-500">How your cycle phase adjusts the score: <span class="text-emerald-400">Ovulatory −8</span> (best window) · <span class="text-green-400">Follicular −5</span> (recovery) · <span class="text-orange-400">Menstrual +5</span> (discomfort) · <span class="text-red-400">Luteal +8</span> (progesterone peaks)</p>
+                        <p class="text-xs text-gray-500 mt-1">These adjustments are small on purpose — your cycle influences your score but doesn't control it.</p>
                     </div>
                 </div>
             </div>
@@ -380,15 +380,15 @@ function renderDashboard(content) {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
                     <h4 class="font-semibold text-white mb-4">Factor Breakdown</h4>
-                    <p class="text-xs text-gray-400 mb-4">Behavioral parameters tracking active metrics driving today's variance:</p>
+                    <p class="text-xs text-gray-400 mb-4">Here's what's helping or hurting your score today:</p>
                     <div class="w-full px-2">
                         <ul id="factor-list" class="space-y-3 text-sm">
                             <li class="flex justify-between text-gray-500"><span>Awaiting breakdown...</span></li>
                         </ul>
                     </div>
                     <div class="mt-4 pt-3 border-t border-gray-800">
-                        <p class="text-xs text-gray-500"><span class="text-emerald-400">+ positive</span> = factor is improving wellness. <span class="text-red-400">− negative</span> = factor is elevating risk.</p>
-                        <p class="text-xs text-gray-500 mt-1">Weights: Stress 35% · Sleep 25% · Anxiety 20% · Activity 10% · Hydration 5%</p>
+                        <p class="text-xs text-gray-500"><span class="text-emerald-400">+ green</span> = this factor is helping you. <span class="text-red-400">− red</span> = this factor is dragging your score down.</p>
+                        <p class="text-xs text-gray-500 mt-1">How much each factor counts: Stress 35% · Sleep 25% · Anxiety 20% · Activity 10% · Water 5%</p>
                     </div>
                 </div>
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
@@ -711,20 +711,20 @@ async function renderAnalytics(content) {
         <div class="animate-fade-in pb-12">
             <h3 class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent mb-2">Population Analytics</h3>
             <p class="text-gray-400 mb-2">Aggregating ${cd.total_population} pseudo-users across statistical baselines.</p>
-            <p class="text-xs text-gray-500 mb-8">This module provides cohort-level summaries computed from the <code class="text-purple-400">/analytics</code> API endpoint. All values are population averages across the full synthetic evaluation cohort (seed=42). These are not individual scores — they represent the distributional centre of the entire user base.</p>
+            <p class="text-xs text-gray-500 mb-8">These are averages across all ${cd.total_population} users in the database — not your personal scores. Think of this as a bird's-eye view of how the entire user base is doing.</p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="bg-gray-900 border border-gray-800 shadow-xl rounded-2xl p-6 relative">
                     <h4 class="text-sm font-semibold text-gray-400">Mean Population Wellness</h4>
                     <div class="text-4xl font-bold text-white mt-2">${cd.avg_wellness} <span class="text-sm font-normal text-purple-500">/ 100</span></div>
                     <div class="mt-3 flex items-center gap-2"><span class="text-xs text-gray-500">Poor</span><div class="flex-1 h-2 rounded-full" style="background: linear-gradient(to right, #ef4444, #eab308, #10b981);"></div><span class="text-xs text-gray-500">Excellent</span></div>
-                    <p class="text-xs text-gray-500 mt-2">Computed via W = Σαⱼ·x̂ⱼ. Score above <span class="text-emerald-400">70</span> indicates generally healthy behavioral patterns across the cohort.</p>
+                    <p class="text-xs text-gray-500 mt-2">Higher is better. Above <span class="text-emerald-400">70</span> means the average user is doing well overall.</p>
                 </div>
                 <div class="bg-gray-900 border border-gray-800 shadow-xl rounded-2xl p-6">
                     <h4 class="text-sm font-semibold text-gray-400">Average Stress Level</h4>
                     <div class="text-4xl font-bold text-white mt-2">${cd.avg_stress} <span class="text-sm font-normal text-red-500">/ 10</span></div>
                     <div class="mt-3 flex items-center gap-2"><span class="text-xs text-gray-500">Low</span><div class="flex-1 h-2 rounded-full" style="background: linear-gradient(to right, #10b981, #eab308, #ef4444);"></div><span class="text-xs text-gray-500">Severe</span></div>
-                    <p class="text-xs text-gray-500 mt-2">Ordinal scale 1–10. Values above <span class="text-yellow-400">5.5</span> correlate with Moderate risk tier. Carries <span class="text-white">35%</span> weight in the composite formula.</p>
+                    <p class="text-xs text-gray-500 mt-2">Scale of 1 to 10. If this goes above <span class="text-yellow-400">5.5</span>, we consider it a concern. Stress is the single biggest factor in the risk formula (35% weight).</p>
                 </div>
             </div>
 
@@ -732,12 +732,12 @@ async function renderAnalytics(content) {
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
                     <h4 class="font-semibold text-white mb-4">Mood Trajectory (7-day Average)</h4>
                     <div style="height:250px;"><canvas id="chart-pop-mood"></canvas></div>
-                    <p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800"><span class="text-purple-400">↑ Rising trend</span> = cohort wellness improving. <span class="text-red-400">↓ Falling trend</span> = population-level stress accumulation. Flat lines suggest stable but potentially stagnant behavioral patterns.</p>
+                    <p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800"><span class="text-purple-400">↑ Going up</span> = people are feeling better over time. <span class="text-red-400">↓ Going down</span> = collective stress is building. A flat line means things are stable but not changing.</p>
                 </div>
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
                     <h4 class="font-semibold text-white mb-4">Stress Distribution by Level</h4>
                     <div style="height:250px;"><canvas id="chart-pop-stress"></canvas></div>
-                    <p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Bar height = number of users at each stress level. A right-skewed distribution (taller bars at 7–10) would indicate a high-stress cohort. Ideal populations cluster at <span class="text-emerald-400">1–4</span>.</p>
+                    <p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Each bar shows how many users are at that stress level. If most bars are on the right side (7–10), the user base is highly stressed. Ideally, users should cluster at <span class="text-emerald-400">1–4</span>.</p>
                 </div>
             </div>
         </div>
@@ -771,19 +771,19 @@ async function renderModelInsights(content) {
         content.innerHTML = `
             <div class="animate-fade-in pb-12">
                 <h3 class="text-2xl font-bold text-white mb-2">Model Diagnostics</h3>
-                <p class="text-xs text-gray-500 mb-6">Live metrics from the trained ML pipeline. Data sourced from the <code class="text-purple-400">/insights</code> API endpoint. These reflect model performance on the 80/20 stratified holdout split of the 9,548-record training corpus.</p>
+                <p class="text-xs text-gray-500 mb-6">These numbers tell you how well the machine learning models are performing. They're tested on data the models haven't seen before (20% held out from 9,548 total records).</p>
                 <div class="grid grid-cols-2 gap-6 mb-8">
                     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 border-l-4 border-l-green-500">
                         <h4 class="text-sm text-gray-400">Classification AUROC</h4>
                         <div class="text-3xl font-bold text-green-400 mt-2">${data.metrics.classification_auc}</div>
                         <div class="mt-3 flex items-center gap-2"><span class="text-xs text-gray-500">Random (0.5)</span><div class="flex-1 h-2 rounded-full" style="background: linear-gradient(to right, #ef4444, #eab308, #10b981);"></div><span class="text-xs text-gray-500">Perfect (1.0)</span></div>
-                        <p class="text-xs text-gray-500 mt-2">Area Under the ROC Curve for the sigmoid-calibrated HistGradientBoosting classifier. Modest value reflects cross-dataset linkage noise, not model architecture deficiency. The deterministic formula remains the primary scoring mechanism.</p>
+                        <p class="text-xs text-gray-500 mt-2">Measures how well the classifier separates high-risk from low-risk users. 0.5 = random guessing, 1.0 = perfect. Our score is modest because the training data was stitched from two separate surveys — the formula is the main scoring tool, not this model.</p>
                     </div>
                     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 border-l-4 border-l-purple-500">
                         <h4 class="text-sm text-gray-400">Regression RMSE</h4>
                         <div class="text-3xl font-bold text-purple-400 mt-2">${data.metrics.regression_rmse}</div>
                         <div class="mt-3 flex items-center gap-2"><span class="text-xs text-gray-500">Accurate (0)</span><div class="flex-1 h-2 rounded-full" style="background: linear-gradient(to right, #10b981, #eab308, #ef4444);"></div><span class="text-xs text-gray-500">Imprecise</span></div>
-                        <p class="text-xs text-gray-500 mt-2">Root Mean Square Error for the quantile median (q=0.50) PHQ-9 regressor. Lower is better. The three quantile models (q=0.10, 0.50, 0.90) together produce a distributional confidence envelope rather than a single point estimate.</p>
+                        <p class="text-xs text-gray-500 mt-2">Shows how far off the depression score predictions are on average. Lower is better. Instead of just one guess, we predict a range (best case, typical, worst case) so you can see how confident the model is.</p>
                     </div>
                 </div>
                 
@@ -791,8 +791,8 @@ async function renderModelInsights(content) {
                     <h4 class="font-semibold text-white mb-4">Relative Feature Importance</h4>
                     <div style="height:250px;"><canvas id="chart-importance"></canvas></div>
                     <div class="mt-4 pt-3 border-t border-gray-800">
-                        <p class="text-xs text-gray-500">Impurity-based importance from the 100-tree Random Forest SHAP explanation proxy (max depth 5). Longer bars = higher predictive contribution. The top-3 features are surfaced as natural-language insight statements on the user dashboard.</p>
-                        <p class="text-xs text-gray-500 mt-1">Rolling temporal features (Stress Volatility, Stress Rolling Mean, Sleep Rolling Mean) capture 3-day behavioral momentum that single-day snapshots miss.</p>
+                        <p class="text-xs text-gray-500">Longer bars = more important for predictions. The top 3 factors from this chart become the "Personalized Insights" shown on your dashboard.</p>
+                        <p class="text-xs text-gray-500 mt-1">Notice the "Rolling" features — they look at your last 3 days, not just today. This helps catch patterns a single day's data would miss.</p>
                     </div>
                 </div>
             </div>
@@ -826,7 +826,7 @@ function renderResearchMode(content) {
                 <p class="text-gray-400 text-lg max-w-3xl mx-auto leading-relaxed">
                     Complete technical documentation of the mathematical formulations, ML pipeline architecture, database schema, and ethical constraints governing LunaAura.
                 </p>
-                <p class="text-xs text-gray-500 max-w-3xl mx-auto mt-2">This page serves as the in-platform equivalent of the published IEEE research paper. Every formula, weight, and threshold shown here is identical to the values implemented in the production codebase.</p>
+                <p class="text-xs text-gray-500 max-w-3xl mx-auto mt-2">Everything on this page matches exactly what's in the published research paper and the running code. Nothing is made up — you can trace every number back to the source.</p>
             </div>
             
             <div class="space-y-8">
@@ -864,9 +864,9 @@ function renderResearchMode(content) {
 
                 <!-- Equations & Factor Modeling -->
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-lg">
-                    <h4 class="text-xl font-bold text-white mb-4 flex items-center gap-3"><span class="text-emerald-400">02.</span> Deterministic Scoring Formulas</h4>
+                    <h4 class="text-xl font-bold text-white mb-4 flex items-center gap-3"><span class="text-emerald-400">02.</span> How Your Scores Are Calculated</h4>
                     <p class="text-gray-400 leading-relaxed text-sm mb-6">
-                        The primary user-facing scores come from a fully transparent weighted formula — not from the ML models. This design ensures every output is auditable, reproducible, and traceable back to specific input values.
+                        Your risk and wellness scores come from a straightforward weighted formula — not from the AI models. This means you can always trace exactly where your score came from.
                     </p>
                     
                     <div class="bg-gray-800 rounded-xl p-5 mb-4 text-sm overflow-x-auto text-gray-300 border border-gray-700">
@@ -906,9 +906,9 @@ function renderResearchMode(content) {
 
                 <!-- Machine Learning -->
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-lg">
-                    <h4 class="text-xl font-bold text-white mb-4 flex items-center gap-3"><span class="text-blue-400">03.</span> Machine Learning Pipeline</h4>
+                    <h4 class="text-xl font-bold text-white mb-4 flex items-center gap-3"><span class="text-blue-400">03.</span> The AI Models Behind the Scenes</h4>
                     <p class="text-gray-400 leading-relaxed text-sm mb-4">
-                        Three supervised models complement the deterministic formula, each serving a distinct analytical purpose:
+                        On top of the formula, three machine learning models run in the background to give you extra insights:
                     </p>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         <div class="bg-gray-800/50 p-5 rounded-lg border border-gray-700/50">
@@ -927,7 +927,7 @@ function renderResearchMode(content) {
                             <p class="text-xs text-gray-500 mt-2">→ Outputs top-3 feature attributions as insight cards</p>
                         </div>
                     </div>
-                    <p class="text-xs text-gray-500">Training corpus: 9,548 records × 28 columns. Class balance: 5,054 (negative) / 4,494 (positive). 10 features survive selection: Age, Sleep Duration, Physical Activity, Stress, Cycle Length, Cycle Day, Hormone Proxy, Sleep Rolling Mean, Stress Rolling Mean, Stress Volatility.</p>
+                    <p class="text-xs text-gray-500">All three models were trained on 9,548 records with 28 data columns each. The dataset is roughly balanced (5,054 low-risk vs 4,494 high-risk). After feature selection, 10 inputs are used: Age, Sleep, Activity, Stress, Cycle Length, Cycle Day, Hormone Proxy, and 3 rolling averages.</p>
                 </div>
 
                 <!-- Assumptions and Ethics -->
