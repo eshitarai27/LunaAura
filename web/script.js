@@ -335,25 +335,45 @@ function renderDashboard(content) {
                 <div id="heatmap-container" class="flex justify-between gap-2 h-12 mb-2">
                     <div class="flex-1 bg-gray-800 rounded-md"></div><div class="flex-1 bg-gray-800 rounded-md"></div><div class="flex-1 bg-gray-800 rounded-md"></div><div class="flex-1 bg-gray-800 rounded-md"></div><div class="flex-1 bg-gray-800 rounded-md"></div><div class="flex-1 bg-gray-800 rounded-md"></div><div class="flex-1 bg-gray-800 rounded-md"></div>
                 </div>
-                <p class="text-xs text-gray-500">Driven by: model risk probability + recent volatility variance.</p>
+                <div class="mt-3 mb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500">Low Risk</span>
+                        <div class="flex-1 h-3 rounded-full" style="background: linear-gradient(to right, #10b981, #84cc16, #eab308, #f97316, #ef4444);"></div>
+                        <span class="text-xs text-gray-500">High Risk</span>
+                    </div>
+                    <div class="flex justify-between mt-1 px-1">
+                        <span class="text-[10px] text-emerald-400">Stable</span>
+                        <span class="text-[10px] text-yellow-400">Elevated</span>
+                        <span class="text-[10px] text-red-400">Critical</span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Each cell represents one day's composite risk probability. <span class="text-emerald-400">Green</span> = Low behavioral risk (R&lt;35). <span class="text-yellow-400">Yellow/Orange</span> = Moderate concern (35≤R&lt;65). <span class="text-red-400">Red</span> = Elevated multi-factor adversity (R≥65). Colors are driven by model risk probability combined with recent volatility variance.</p>
             </div>
 
             <div id="dashboard-charts-block" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 hidden">
-                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Trend Projection</h4><div style="height:200px;"><canvas id="chart-mood-forecast"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: historic wellness scores.</p></div>
-                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Stress Trajectory</h4><div style="height:200px;"><canvas id="chart-stress-trend"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: actual physiological stress records.</p></div>
-                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Sleep/Activity</h4><div style="height:200px;"><canvas id="chart-sleep-proj"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: true recovery and physical activity vectors.</p></div>
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Trend Projection</h4><div style="height:200px;"><canvas id="chart-mood-forecast"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: historic wellness scores. <span class="text-purple-400">↑ Upward</span> = improving behavioral patterns. <span class="text-red-400">↓ Downward</span> = declining wellness requiring attention.</p></div>
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Stress Trajectory</h4><div style="height:200px;"><canvas id="chart-stress-trend"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: physiological stress records. Scale 1–10 ordinal. Sustained readings above <span class="text-yellow-400">5.5</span> correlate with Moderate risk tier transition.</p></div>
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"><h4 class="font-semibold text-white mb-2">30-Day Sleep/Activity</h4><div style="height:200px;"><canvas id="chart-sleep-proj"></canvas></div><p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">Driven by: recovery and physical activity vectors. Sleep below <span class="text-blue-400">7h</span> = deficit penalty. Activity below <span class="text-blue-400">60 min</span> = reduced wellness contribution.</p></div>
             </div>
             
             <div id="dashboard-prob-block" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 hidden">
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg">
                     <h4 class="font-semibold text-white mb-4">Risk Indicator</h4>
                     <div class="relative mx-auto" style="height:220px; width:220px;"><canvas id="chart-risk-dist"></canvas></div>
-                    <p class="text-xs text-center text-gray-500 mt-4">Driven by: Distributed native regression outputs mapping severity bounds.</p>
+                    <div class="flex justify-center gap-4 mt-3 text-[10px]">
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span class="text-gray-400">Low (R&lt;35) — Stable</span></span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span><span class="text-gray-400">Moderate (35–64)</span></span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="text-gray-400">High (≥65) — Alert</span></span>
+                    </div>
+                    <p class="text-xs text-center text-gray-500 mt-2">Based on composite deterministic formula R = Σf(xᵢ) + τ + φ(d,g). Not a clinical diagnosis — behavioral wellness estimate only.</p>
                 </div>
                 <div id="phase-influence-container" class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg ${currentUser && currentUser.profile && currentUser.profile.gender !== 'Female' ? 'hidden' : ''}">
                     <h4 class="font-semibold text-white mb-4">Phase Influence</h4>
                     <div id="phase-bars" class="space-y-4 text-gray-500 text-sm italic">Awaiting rendering...</div>
-                    <p class="text-xs text-gray-500 mt-6 pt-3 border-t border-gray-800">Driven by: current predicted impact based on generic menstrual cycle boundaries.</p>
+                    <div class="mt-4 pt-3 border-t border-gray-800">
+                        <p class="text-xs text-gray-500">Phase modifier range: <span class="text-emerald-400">Ovulatory −8</span> · <span class="text-green-400">Follicular −5</span> · <span class="text-orange-400">Menstrual +5</span> · <span class="text-red-400">Luteal +8</span></p>
+                        <p class="text-xs text-gray-500 mt-1">Based on Baker & Driver (2007) and Kiesner (2012). Hormonal context modulates — does not dominate — the composite score.</p>
+                    </div>
                 </div>
             </div>
             
@@ -365,6 +385,10 @@ function renderDashboard(content) {
                         <ul id="factor-list" class="space-y-3 text-sm">
                             <li class="flex justify-between text-gray-500"><span>Awaiting breakdown...</span></li>
                         </ul>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-800">
+                        <p class="text-xs text-gray-500"><span class="text-emerald-400">+ positive</span> = factor is improving wellness. <span class="text-red-400">− negative</span> = factor is elevating risk.</p>
+                        <p class="text-xs text-gray-500 mt-1">Weights: Stress 35% · Sleep 25% · Anxiety 20% · Activity 10% · Hydration 5%</p>
                     </div>
                 </div>
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
