@@ -20,7 +20,7 @@ else
     python3 -m venv venv
     source venv/bin/activate
     echo "Installing requirements..."
-    pip install flask flask-cors pandas scikit-learn numpy joblib
+    pip install flask flask-cors pandas scikit-learn numpy joblib shap
 fi
 
 # 3. Boot Server in Foreground
