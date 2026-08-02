@@ -179,19 +179,26 @@ function logout() {
     navigateTo('dashboard');
 }
 
+let appBooted = false;
 function initializeApp() {
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', () => { navigateTo(btn.dataset.page); });
-    });
-    // Chart Default Configurations
-    Chart.defaults.color = '#9ca3af';
-    Chart.defaults.font.family = 'Inter, sans-serif';
-    Chart.defaults.elements.bar.borderRadius = 4;
-    Chart.defaults.elements.line.tension = 0.4;
-    
-    // Boot Status Checks
-    startHeartbeat();
-    
+    // checkAuth() (and therefore initializeApp()) re-runs on every login/signup/logout.
+    // Listener attachment, chart defaults, and the heartbeat interval only need to happen once,
+    // otherwise nav clicks double-fire and each login stacks another setInterval.
+    if (!appBooted) {
+        appBooted = true;
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => { navigateTo(btn.dataset.page); });
+        });
+        // Chart Default Configurations
+        Chart.defaults.color = '#9ca3af';
+        Chart.defaults.font.family = 'Inter, sans-serif';
+        Chart.defaults.elements.bar.borderRadius = 4;
+        Chart.defaults.elements.line.tension = 0.4;
+
+        // Boot Status Checks
+        startHeartbeat();
+    }
+
     // Pre-fetch Cohort Data silently
     fetchCohortData();
     
@@ -427,7 +434,8 @@ function renderDashboard(content) {
                 summary: {
                     summary_sentence: "Population baseline actively monitored.",
                     what_changed_most: "Aggregate Cohort Telemetry",
-                    wellness_score: Math.round(parseFloat(cohortAnalytics.avg_wellness || 72))
+                    wellness_score: Math.round(parseFloat(cohortAnalytics.avg_wellness || 72)),
+                    latest_risk: (100 - Math.round(parseFloat(cohortAnalytics.avg_wellness || 72))) + "%"
                 },
                 recommendation: {
                     action: [{type: "System Ready", priority: "LOW", message: "Login to activate personalized localized trace parameters."}]
@@ -543,7 +551,7 @@ function bindDashboardData(payload) {
             const ctxRisk = document.getElementById('chart-risk-dist').getContext('2d');
             if(charts.risk) charts.risk.destroy();
             
-            const liveRiskVal = parseInt(payload.summary.latest_risk.replace('%', '')) || 0;
+            const liveRiskVal = parseInt((payload.summary.latest_risk || '0%').replace('%', '')) || 0;
             const currentDist = { Low: liveRiskVal < 35 ? 100 : 0, Moderate: (liveRiskVal >= 35 && liveRiskVal < 65) ? 100 : 0, High: liveRiskVal >= 65 ? 100 : 0 };
 
             charts.risk = new Chart(ctxRisk, {
@@ -751,6 +759,7 @@ async function renderAnalytics(content) {
     requestAnimationFrame(() => {
         buildLineChart('chart-pop-mood', cd.mood_trend, '#a855f7', 'Population Mood');
         
+        if (charts.popStress) charts.popStress.destroy();
         charts.popStress = new Chart(document.getElementById('chart-pop-stress').getContext('2d'), {
             type: 'bar',
             data: {
@@ -804,6 +813,7 @@ async function renderModelInsights(content) {
         `;
 
         requestAnimationFrame(() => {
+            if (charts.importance) charts.importance.destroy();
             charts.importance = new Chart(document.getElementById('chart-importance').getContext('2d'), {
                 type: 'bar',
                 data: {
