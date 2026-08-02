@@ -21,3 +21,6 @@ venv/
 
 # Database backups (keep main db)
 data/lunaaura_backup.db
+
+.vercel
+.env*

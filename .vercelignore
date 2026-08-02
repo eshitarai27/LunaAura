@@ -1,0 +1,13 @@
+# Not needed at runtime - keeps the deployment bundle small and cold starts fast.
+archive/
+paper_assets/
+presentation/
+docs/
+scripts/
+data/raw/
+data/processed/
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.log
