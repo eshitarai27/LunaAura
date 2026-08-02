@@ -7,6 +7,7 @@ const API_BASE = (window.location.protocol === 'file:' || ((window.location.host
 
 let currentUser = null;
 let currentPage = 'dashboard';
+let renderToken = 0; // bumped on every navigateTo() so stale requestAnimationFrame callbacks from a page the user has since left can detect it and no-op
 let charts = {};
 let dataHistory = [];
 let cohortAnalytics = null;
@@ -236,6 +237,7 @@ async function fetchCohortData() {
 }
 
 function navigateTo(page) {
+    renderToken++;
     if (page === 'daily-log' && (!currentUser || !currentUser.profile || currentUser.profile.username === 'Guest')) {
         document.getElementById('page-content').innerHTML = `
             <div class="flex flex-col items-center justify-center p-12 mt-12 text-center bg-gray-900 border border-gray-800 rounded-2xl max-w-2xl mx-auto shadow-2xl">
@@ -414,9 +416,11 @@ function renderDashboard(content) {
         </div>
     `;
 
+    const myRenderToken = renderToken;
     requestAnimationFrame(() => {
+        if (myRenderToken !== renderToken) return; // user navigated away before this frame ran
         let runPayload = lastPrediction;
-        
+
         // Generic Fallback Context
         if (!currentUser && cohortAnalytics) {
             runPayload = {
@@ -708,11 +712,13 @@ async function runPrediction() {
 // ANALYTICS (Cohort Averages)
 // ============================================
 async function renderAnalytics(content) {
+    const myRenderToken = renderToken;
     content.innerHTML = `<div class="flex justify-center mt-20"><div class="spinner w-8 h-8"></div></div>`;
     
     // Fetch if missing
     if(!cohortAnalytics) await fetchCohortData();
-    
+    if (myRenderToken !== renderToken) return; // user navigated away while fetching
+
     if(!cohortAnalytics) {
         content.innerHTML = `<div class="text-center text-red-400 mt-20">Backend Offline. Cohort missing.</div>`;
         return;
@@ -757,8 +763,9 @@ async function renderAnalytics(content) {
     `;
 
     requestAnimationFrame(() => {
+        if (myRenderToken !== renderToken) return; // user navigated away before this frame ran
         buildLineChart('chart-pop-mood', cd.mood_trend, '#a855f7', 'Population Mood');
-        
+
         if (charts.popStress) charts.popStress.destroy();
         charts.popStress = new Chart(document.getElementById('chart-pop-stress').getContext('2d'), {
             type: 'bar',
@@ -775,13 +782,15 @@ async function renderAnalytics(content) {
 // MODEL INSIGHTS
 // ============================================
 async function renderModelInsights(content) {
+    const myRenderToken = renderToken;
     content.innerHTML = `<div class="flex justify-center mt-20"><div class="spinner w-8 h-8"></div></div>`;
-    
+
     try {
         const res = await fetch(`${API_BASE}/insights`);
         if(!res.ok) throw new Error("API Exception");
         const data = await res.json();
-        
+        if (myRenderToken !== renderToken) return; // user navigated away while fetching
+
         content.innerHTML = `
             <div class="animate-fade-in pb-12">
                 <h3 class="text-2xl font-bold text-white mb-2">Model Diagnostics</h3>
@@ -813,6 +822,7 @@ async function renderModelInsights(content) {
         `;
 
         requestAnimationFrame(() => {
+            if (myRenderToken !== renderToken) return; // user navigated away before this frame ran
             if (charts.importance) charts.importance.destroy();
             charts.importance = new Chart(document.getElementById('chart-importance').getContext('2d'), {
                 type: 'bar',
