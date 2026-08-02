@@ -1,4 +1,9 @@
-const API_BASE = 'http://localhost:5001';
+// Local dev (file:// or a static server on another port) still points at the
+// standalone Flask API on :5001. Once deployed, the API is served from the
+// same origin as this page, so we use a relative base instead.
+const API_BASE = (window.location.protocol === 'file:' || ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port !== '5001'))
+    ? 'http://localhost:5001'
+    : '';
 
 let currentUser = null;
 let currentPage = 'dashboard';

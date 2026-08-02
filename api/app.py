@@ -1,7 +1,7 @@
 import os
 import sys
 import json
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
 # Append project root to sys path to import src modules seamlessly
@@ -13,6 +13,16 @@ from src.models.explain import ExplainerSystem
 
 app = Flask(__name__)
 CORS(app)
+
+WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
+
+@app.route("/")
+def serve_index():
+    return send_from_directory(WEB_DIR, "index.html")
+
+@app.route("/script.js")
+def serve_script():
+    return send_from_directory(WEB_DIR, "script.js")
 
 # Initialize singletons for fast inference
 try:
@@ -47,8 +57,8 @@ def api_records():
     conn = get_db_connection()
     conn.row_factory = _dict_factory
     cur = conn.cursor()
-    cur.execute('''SELECT u.name, h.* FROM users u 
-                   JOIN user_history h ON u.id = h.user_id 
+    cur.execute('''SELECT u.username, h.* FROM users u
+                   JOIN user_history h ON u.id = h.user_id
                    ORDER BY h.date DESC''')
     records = cur.fetchall()
     conn.close()

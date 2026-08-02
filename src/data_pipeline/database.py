@@ -2,9 +2,16 @@ import sqlite3
 import os
 import random
 import math
+import shutil
 from datetime import datetime, timedelta
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "lunaaura.db")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+SOURCE_DB_PATH = os.path.join(BASE_DIR, "data", "lunaaura.db")
+
+# Vercel's filesystem is read-only outside /tmp, so the bundled (pre-seeded,
+# paper-matching) database is copied to /tmp on cold start and all reads/writes
+# happen against that ephemeral copy instead of the bundled source.
+DB_PATH = "/tmp/lunaaura.db" if os.environ.get("VERCEL") else SOURCE_DB_PATH
 
 INDIAN_NAMES = ['Aanya', 'Priya', 'Kavya', 'Riya', 'Neha', 'Aditi', 'Rohan', 'Aarav', 'Ishaan', 'Kartik', 
                 'Rahul', 'Ananya', 'Diya', 'Tanya', 'Sneha', 'Arjun', 'Vikram', 'Kiara', 'Aisha', 'Simran', 
@@ -18,6 +25,11 @@ INDIAN_NAMES = ['Aanya', 'Priya', 'Kavya', 'Riya', 'Neha', 'Aditi', 'Rohan', 'Aa
                 'Khushi', 'Kiran', 'Kunal', 'Lakshay', 'Lavanya', 'Madhav', 'Mahika', 'Manish', 'Manvi', 'Meera']
 
 def init_db():
+    if os.environ.get("VERCEL") and not os.path.exists(DB_PATH) and os.path.exists(SOURCE_DB_PATH):
+        shutil.copy(SOURCE_DB_PATH, DB_PATH)
+        print("Copied bundled lunaaura.db to /tmp for this instance.")
+        return
+
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()

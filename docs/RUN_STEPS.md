@@ -30,7 +30,7 @@ python src/models/train_regressor.py
 ```bash
 python api/app.py
 ```
-The Flask server will fire on `http://127.0.0.1:5000`. Leave this terminal tab open.
+The Flask server will fire on `http://127.0.0.1:5001`. Leave this terminal tab open.
 
 ## 5. View the Frontend
-Open `web/index.html` directly in your browser. It points straight to localhost:5000 and parses real-time SHAP features and Risk models. 
+Flask now also serves the frontend directly, so you can just open `http://127.0.0.1:5001/` in your browser. (You can still open `web/index.html` directly instead if you prefer — it points at localhost:5001 and parses real-time SHAP features and Risk models the same way.)

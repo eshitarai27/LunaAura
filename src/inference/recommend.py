@@ -65,7 +65,7 @@ def get_recommendations(prediction_dict, raw_data=None):
         recommendations.append({
             "type": "nutrition",
             "priority": "MEDIUM",
-            "message": f"Hydration ({water} cups) is sub-optimal. Aim for baseline +4 cups to stabilize cognitive tension."
+            "message": f"Hydration ({water}L) is sub-optimal. Aim for a baseline of 4L to stabilize cognitive tension."
         })
         
     return recommendations

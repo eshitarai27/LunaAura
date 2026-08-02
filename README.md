@@ -62,7 +62,7 @@ open web/index.html
 
 The API runs on `http://localhost:5001`. The frontend connects to it automatically.
 
-**Demo users:** `eshita / eshita123` (Female, 85 entries) | `rohan / rohan123` (Male)
+**Demo users:** `Eshita / eshita_dummy` (Female, 85 entries) | `Rohan / rohan_dummy` (Male) — or use the one-click demo buttons on the login screen.
 
 ---
 
